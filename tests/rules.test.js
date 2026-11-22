@@ -85,6 +85,106 @@
     throws(function () { PHCRules.baseFare(service("daily-hire")); });
   });
 
+  // ---------- US05: validateBooking ----------
+  // Dates are built in local time from NOW so the tests pass in any time zone.
+  function localDate(ms) {
+    var d = new Date(ms);
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function localTime(ms) {
+    var d = new Date(ms);
+    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
+  function details(overrides) {
+    var at = NOW.getTime() + 48 * HOUR;
+    var base = {
+      pickup: "1 High St, E1 6AN",
+      destination: "Heathrow Terminal 5",
+      date: localDate(at),
+      time: localTime(at),
+      passengers: 2,
+      carSize: 4
+    };
+    Object.keys(overrides || {}).forEach(function (k) { base[k] = overrides[k]; });
+    return base;
+  }
+
+  test("validateBooking: valid - complete details in 48h pass and return pickupAt", function () {
+    var r = PHCRules.validateBooking(details(), NOW);
+    equal(r.valid, true);
+    equal(Object.keys(r.errors).length, 0);
+    equal(new Date(r.pickupAt).getTime(), NOW.getTime() + 48 * HOUR);
+  });
+
+  test("validateBooking: invalid - every missing required field gets its own error", function () {
+    var r = PHCRules.validateBooking({}, NOW);
+    equal(r.valid, false);
+    equal(Object.keys(r.errors).sort().join(","), "carSize,date,destination,passengers,pickup,time");
+  });
+
+  test("validateBooking: invalid - pick-up in the past shows the future-date message", function () {
+    var past = NOW.getTime() - 2 * HOUR;
+    var r = PHCRules.validateBooking(details({ date: localDate(past), time: localTime(past) }), NOW);
+    equal(r.valid, false);
+    equal(r.errors.date, "Date and time must be in the future");
+  });
+
+  test("validateBooking: threshold - exactly now is rejected, 1 minute later is accepted", function () {
+    var nowParts = details({ date: localDate(NOW.getTime()), time: localTime(NOW.getTime()) });
+    equal(PHCRules.validateBooking(nowParts, NOW).errors.date, "Date and time must be in the future");
+    var later = NOW.getTime() + 60 * 1000;
+    equal(PHCRules.validateBooking(details({ date: localDate(later), time: localTime(later) }), NOW).valid, true);
+  });
+
+  test("validateBooking: invalid calendar date (30 February) is rejected", function () {
+    var r = PHCRules.validateBooking(details({ date: "2027-02-30", time: "10:00" }), NOW);
+    equal(r.errors.date, "Enter a valid date and time");
+  });
+
+  test("validateBooking: 5 passengers in a 4-seater suggests a 7-seater", function () {
+    var r = PHCRules.validateBooking(details({ passengers: 5, carSize: 4 }), NOW);
+    equal(r.valid, false);
+    equal(r.suggestedCarSize, 7);
+    equal(r.errors.carSize, "A 4-seater takes up to 4 passengers. Choose a 7-seater for 5 passengers.");
+  });
+
+  test("validateBooking: threshold - 4 passengers fit a 4-seater, 7 fit a 7-seater, 8 is too many", function () {
+    equal(PHCRules.validateBooking(details({ passengers: 4, carSize: 4 }), NOW).valid, true);
+    equal(PHCRules.validateBooking(details({ passengers: 7, carSize: 7 }), NOW).valid, true);
+    var r = PHCRules.validateBooking(details({ passengers: 8, carSize: 7 }), NOW);
+    equal(r.valid, false);
+    equal(typeof r.errors.passengers, "string");
+  });
+
+  test("validateBooking: passengers must be a whole number of at least 1", function () {
+    equal(typeof PHCRules.validateBooking(details({ passengers: 0 }), NOW).errors.passengers, "string");
+    equal(typeof PHCRules.validateBooking(details({ passengers: 2.5 }), NOW).errors.passengers, "string");
+    equal(typeof PHCRules.validateBooking(details({ passengers: "abc" }), NOW).errors.passengers, "string");
+  });
+
+  test("validateBooking: same pick-up and destination is rejected", function () {
+    var r = PHCRules.validateBooking(details({ destination: " 1 high st, e1 6an " }), NOW);
+    equal(r.errors.destination, "Destination must be different from the pick-up address");
+  });
+
+  test("validateBooking: daily hire needs 1 to 12 hours", function () {
+    equal(PHCRules.validateBooking(details({ byTime: true, hours: 4 }), NOW).valid, true);
+    equal(typeof PHCRules.validateBooking(details({ byTime: true }), NOW).errors.hours, "string");
+    equal(typeof PHCRules.validateBooking(details({ byTime: true, hours: 13 }), NOW).errors.hours, "string");
+  });
+
+  test("validateBooking: invalid 'now' throws", function () {
+    throws(function () { PHCRules.validateBooking(details(), "not a date"); });
+  });
+
+  test("suggestCarSize and bookingTag", function () {
+    equal(PHCRules.suggestCarSize(3), 4);
+    equal(PHCRules.suggestCarSize(6), 7);
+    equal(PHCRules.suggestCarSize(9), null);
+    equal(PHCRules.bookingTag("online"), "Priority");
+    equal(PHCRules.bookingTag("phone"), "Standard");
+  });
+
   // ---------- data contract ----------
   test("PHC_DATA.services: exactly 6, correct flags", function () {
     equal(PHC_DATA.services.length, 6);
