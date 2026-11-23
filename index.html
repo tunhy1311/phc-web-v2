@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PrivateHire Cars · Book a private hire car in London</title>
+  <meta name="description" content="PrivateHire Cars: book local, long distance, airport and hotel transfers in London online.">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-root="." data-area="home">
+  <main id="main" class="container">
+    <section class="hero">
+      <span class="badge badge-accent">London · 24/7</span>
+      <h1>Private hire cars across London, booked in minutes</h1>
+      <p class="lead">Local journeys, airport and hotel transfers, long distance trips and daily hire with a professional driver. Book online and save 15%.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="customer/book.html">Book a car</a>
+        <a class="btn" href="customer/login.html">Sign in</a>
+        <a class="btn btn-ghost" href="customer/register.html">Create an account</a>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="services-title">
+      <h2 id="services-title">Our services</h2>
+      <!-- Filled from PHC_DATA.services by the script at the bottom of this page -->
+      <div class="grid" id="service-list"></div>
+    </section>
+
+    <section class="section grid" aria-label="All pages">
+      <div class="card">
+        <h2>Customers</h2>
+        <ul class="link-list">
+          <li><a href="customer/book.html">Book a car</a></li>
+          <li><a href="customer/login.html">Sign in</a></li>
+          <li><a href="customer/register.html">Register</a></li>
+          <li><a href="customer/my-bookings.html">My bookings</a></li>
+          <li><a href="customer/enquiry.html">Send an enquiry</a></li>
+          <li><a href="customer/payment.html">Payment</a></li>
+          <li><a href="customer/receipt.html">Receipt</a></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>Staff</h2>
+        <ul class="link-list">
+          <li><a href="staff/caller.html">Caller lookup</a></li>
+          <li><a href="staff/availability.html">Car availability</a></li>
+          <li><a href="staff/new-booking.html">New booking (phone)</a></li>
+          <li><a href="staff/fleet.html">Fleet</a></li>
+          <li><a href="staff/enquiries.html">Customer enquiries</a></li>
+          <li><a href="staff/insights.html">Insights</a></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>Developers</h2>
+        <ul class="link-list">
+          <li><a href="tests/index.html">Unit tests (rules &amp; validators)</a></li>
+        </ul>
+        <p class="muted">Demo customer: sarah@example.com / demo1234</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    (function () {
+      var list = document.getElementById("service-list");
+      list.innerHTML = PHC_DATA.services.map(function (s) {
+        var unit = s.byTime ? " / hour" : "";
+        return (
+          '<article class="card">' +
+            "<h3>" + PHCUI.escapeHtml(s.name) + "</h3>" +
+            '<p class="muted">' + PHCUI.escapeHtml(s.description) + "</p>" +
+            '<p class="price">From £' + s.fromPrice + unit + "</p>" +
+            (s.needsFlight ? '<span class="badge">Flight number needed</span>' : "") +
+          "</article>"
+        );
+      }).join("");
+    })();
+  </script>
+</body>
+</html>
