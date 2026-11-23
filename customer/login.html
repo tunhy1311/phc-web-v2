@@ -10,12 +10,70 @@
 <body data-root=".." data-area="customer">
   <main id="main" class="container">
     <h1>Sign in</h1>
-    <p class="lead">Sign in to manage your bookings.</p>
+    <p class="lead">Sign in to manage your bookings and update your details.</p>
 
-    <!-- TODO (Huy: this file will be overwritten by the login story): build this page inside #page-root.
-         Header and footer come from js/ui.js - do not copy them into this file. -->
-    <div id="page-root" class="card placeholder">
-      <p>Skeleton page: to be built in Sprint 1.</p>
+    <!-- US02 (PHC-15) - owner: Huy. Three views, only one visible at a time. -->
+    <div id="page-root">
+      <section class="card" id="view-login" aria-labelledby="h-login">
+        <h2 id="h-login">Sign in to your account</h2>
+        <form class="form" id="login-form" novalidate>
+          <p class="error" id="err-login" role="alert"></p>
+          <div class="field">
+            <label for="l-email">Email</label>
+            <input id="l-email" type="email" autocomplete="username">
+            <p class="error" id="err-l-email" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="l-password">Password</label>
+            <input id="l-password" type="password" autocomplete="current-password">
+            <p class="error" id="err-l-password" role="alert"></p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" type="submit">Sign in</button>
+            <a class="btn btn-ghost" href="register.html">Create an account</a>
+          </div>
+        </form>
+      </section>
+
+      <section class="card" id="view-locked" aria-labelledby="h-locked" hidden>
+        <h2 id="h-locked">Account locked</h2>
+        <p class="error" role="alert">Too many attempts. Reset your password</p>
+        <p><a href="#" id="reset-link">Reset your password</a></p>
+        <p id="reset-msg" class="muted" role="status"></p>
+        <button class="btn btn-ghost" type="button" id="back-to-login">Back to sign in</button>
+      </section>
+
+      <section class="card" id="view-profile" aria-labelledby="h-profile" hidden>
+        <h2 id="h-profile">My profile</h2>
+        <p id="welcome" class="muted"></p>
+        <form class="form" id="profile-form" novalidate>
+          <p class="error" id="err-profile" role="alert"></p>
+          <div class="field">
+            <label for="p-email">Email (cannot be changed)</label>
+            <input id="p-email" type="email" readonly>
+          </div>
+          <div class="field">
+            <label for="p-name">Name</label>
+            <input id="p-name" type="text" autocomplete="name">
+            <p class="error" id="err-p-name" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="p-phone">Phone</label>
+            <input id="p-phone" type="tel" autocomplete="tel">
+            <p class="error" id="err-p-phone" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="p-address">Address</label>
+            <input id="p-address" type="text" autocomplete="street-address">
+            <p class="error" id="err-p-address" role="alert"></p>
+          </div>
+          <p id="profile-ok" class="success" role="status"></p>
+          <div class="actions">
+            <button class="btn btn-primary" type="submit">Save profile</button>
+            <button class="btn btn-ghost" type="button" id="logout-btn">Sign out</button>
+          </div>
+        </form>
+      </section>
     </div>
   </main>
 
@@ -23,5 +81,7 @@
   <script src="../js/store.js"></script>
   <script src="../js/ui.js"></script>
   <script src="../js/validators.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/customer-login.js"></script>
 </body>
 </html>
