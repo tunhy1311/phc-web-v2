@@ -3,24 +3,88 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Car availability · PrivateHire Cars</title>
+  <title>Staff Availability · PrivateHire Cars</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="availability.css">
 </head>
 <body data-root=".." data-area="staff">
-  <main id="main" class="container">
-    <h1>Car availability</h1>
-    <p class="lead">See which cars and drivers are available or busy.</p>
+  <main id="main" class="container availability-page">
+    <header class="availability-intro">
+      <h1>Staff Availability</h1>
+      <p class="lead">View minicabs, assigned drivers and indicative journey quotations.</p>
+    </header>
 
-    <!-- TODO (owner TBD: availability view from PHCStore.get("cars") and get("drivers")): build this page inside #page-root.
-         Header and footer come from js/ui.js - do not copy them into this file. -->
-    <div id="page-root" class="card placeholder">
-      <p>Skeleton page: to be built in Sprint 1.</p>
+    <section class="card availability-panel" aria-labelledby="search-title">
+      <h2 id="search-title">Search &amp; Filter Vehicles</h2>
+      <form id="availability-form" class="availability-filters">
+        <label class="field" for="vehicle-size">Vehicle Size
+          <select id="vehicle-size" name="vehicle-size">
+            <option value="all">All Sizes</option>
+            <option value="4">4-Seater</option>
+            <option value="7">7-Seater</option>
+          </select>
+        </label>
+        <label class="field" for="journey-date">Journey Date
+          <input id="journey-date" name="journey-date" type="date">
+        </label>
+        <label class="field" for="journey-time">Journey Time
+          <input id="journey-time" name="journey-time" type="time">
+        </label>
+        <button class="btn btn-primary" type="submit">Search Available Vehicles</button>
+      </form>
+      <p id="filter-feedback" class="availability-note" role="status" aria-live="polite"></p>
+    </section>
+
+    <div class="availability-layout">
+      <section class="card availability-panel" aria-labelledby="vehicles-title">
+        <div class="availability-heading">
+          <div>
+            <h2 id="vehicles-title">Available Vehicles</h2>
+            <p id="vehicle-summary" class="availability-note" role="status" aria-live="polite"></p>
+          </div>
+          <button id="refresh-vehicles" type="button" class="btn btn-ghost btn-sm">Refresh Availability</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th scope="col">Vehicle</th><th scope="col">Size</th><th scope="col">Driver</th><th scope="col">Status</th></tr></thead>
+            <tbody id="vehicle-rows"></tbody>
+          </table>
+        </div>
+        <div id="empty-vehicles" class="availability-empty" hidden>
+          <h3>No vehicles available</h3>
+          <p id="next-available"></p>
+          <p class="availability-note">Try a different vehicle size, date or time.</p>
+          <button id="clear-filters" type="button" class="btn btn-ghost btn-sm">Change filters</button>
+        </div>
+        <p id="refresh-feedback" class="availability-note" role="status" aria-live="polite"></p>
+        <div class="availability-demo-controls">
+          <button id="simulate-dispatch" type="button" class="btn btn-ghost btn-sm">Demo: assign an available car</button>
+          <small>Simulation only. Refresh reads the latest car status from PHCStore.</small>
+        </div>
+      </section>
+
+      <section class="card availability-panel" aria-labelledby="quote-title">
+        <h2 id="quote-title">Journey Quotation</h2>
+        <p class="availability-note">Indicative estimates for available vehicle sizes.</p>
+        <form id="quote-form" class="availability-quote-form">
+          <label class="field" for="pickup">Pick-up Location
+            <input id="pickup" name="pickup" type="text" placeholder="London Victoria Station" required>
+          </label>
+          <label class="field" for="destination">Destination
+            <input id="destination" name="destination" type="text" placeholder="London Bridge Station" required>
+          </label>
+          <button class="btn btn-primary" type="submit">Get Quote</button>
+        </form>
+        <div id="quote-results" class="availability-quotes" role="status" aria-live="polite"></div>
+        <p class="availability-note">Demo fares only. Actual route-based pricing has not been defined by the project team.</p>
+      </section>
     </div>
   </main>
-
+  <!-- Keep this script order: project data, shared store/UI, then page-specific logic. -->
   <script src="../js/data.js"></script>
   <script src="../js/store.js"></script>
   <script src="../js/ui.js"></script>
+  <script src="../js/availability.js"></script>
 </body>
 </html>
