@@ -93,7 +93,12 @@
   });
 
   // Header "Sign out" button or another tab changed the session.
-  document.addEventListener("phc:session-change", showForSession);
+  // Same behaviour as the Sign out button in the profile: go back to Home.
+  document.addEventListener("phc:session-change", function (ev) {
+    var onProfile = !$("view-profile").hidden;
+    if (onProfile && ev.detail === null) { window.location.href = "../index.html"; return; }
+    showForSession();
+  });
   document.addEventListener("phc:reset", showForSession);
 
   showForSession();
