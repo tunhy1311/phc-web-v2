@@ -1,0 +1,39 @@
+/* PHC-11: page-local styles. Do not change shared css/styles.css. */
+.availability-page { --availability-gap: 20px; }
+.availability-intro { margin-bottom: 24px; }
+.availability-panel { margin-bottom: var(--availability-gap); }
+.availability-panel h2 { margin-bottom: 15px; }
+.availability-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  align-items: end;
+  gap: 16px;
+}
+.availability-page .field { min-width: 0; }
+.availability-page .btn { white-space: normal; }
+.availability-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); gap: var(--availability-gap); }
+.availability-heading { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; align-items: start; }
+.availability-note { color: var(--muted); font-size: 0.88rem; margin: 0 0 16px; }
+.availability-page table { width: 100%; }
+.availability-page th, .availability-page td { padding: 13px 10px; text-align: left; }
+.availability-page td small { display: block; color: var(--muted); }
+.availability-page .vehicle-status { font-weight: 700; }
+.availability-page .vehicle-status.available { color: var(--success); }
+.availability-page .vehicle-status.busy { color: var(--error); }
+.availability-quote-form { display: grid; gap: 14px; }
+.availability-quote-form > button { width: 100%; }
+.availability-quotes { margin: 20px 0 14px; }
+.availability-quote-row { display: flex; justify-content: space-between; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; background: var(--surface-2); }
+.availability-quotes strong { font-size: 1.12rem; }
+.availability-empty { text-align: center; padding: 32px 12px; }
+.availability-empty h3 { margin-bottom: 8px; }
+.availability-demo-controls { margin-top: 22px; border-top: 1px solid var(--border); padding-top: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.availability-demo-controls small { color: var(--muted); flex: 1 1 240px; }
+@media (max-width: 900px) {
+  .availability-layout { grid-template-columns: 1fr; }
+  .availability-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .availability-filters { grid-template-columns: 1fr; }
+  .availability-heading { flex-direction: column; }
+}
