@@ -622,3 +622,106 @@ th {
   color: var(--error);
   font-weight: 700;
 }
+
+/* ---------- Booking: journey details and summary (US05) ---------- */
+
+#step-details,
+#step-summary {
+  scroll-margin-top: 96px;
+}
+
+.step-label {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.field-row {
+  display: grid;
+  gap: var(--space);
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+}
+
+.size-options {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+}
+
+.size-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.size-choice input {
+  margin-top: 4px;
+}
+
+.size-text {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.size-choice:focus-within {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.suggestion {
+  margin-top: 8px;
+}
+
+.hint-box {
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+}
+
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.summary-list {
+  display: grid;
+  gap: 0;
+  margin: 16px 0;
+  max-width: 560px;
+}
+
+.summary-list > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-list dt {
+  color: var(--muted);
+}
+
+.summary-list dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.price-list .total dt,
+.price-list .total dd {
+  color: var(--accent);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
