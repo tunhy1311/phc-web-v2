@@ -17,7 +17,7 @@
  * Saved booking (pushed to state.bookings, its id is added to customer.bookings):
  *   { id, customerId, serviceId, serviceName, flight, hours,
  *     pickup, destination, pickupAt ("YYYY-MM-DDTHH:MM:00", local time), passengers, carSize (4|7),
- *     baseFare, discount, total (GBP), channel: "online", tag: "Priority", status: "confirmed", createdAt (ISO) }
+ *     baseFare, discount, total (GBP), channel: "online", tag: "Priority", status: "unpaid", createdAt (ISO) }
  */
 var PHCBookDetails = (function () {
   "use strict";
@@ -466,7 +466,7 @@ var PHCBookDetails = (function () {
       total: price.total,
       channel: "online",
       tag: PHCRules.bookingTag("online"),
-      status: "confirmed",
+      status: "unpaid",
       createdAt: new Date().toISOString()
     };
 
@@ -492,11 +492,13 @@ var PHCBookDetails = (function () {
   function renderConfirmed(booking) {
     summaryStep.innerHTML =
       '<div class="card" id="bk-confirmed">' +
-        '<h2 class="success">Booking confirmed</h2>' +
+        '<h2 class="success">Booking saved</h2>' +
         "<p>Reference <strong>" + esc(booking.id.toUpperCase()) + "</strong> · " +
-          '<span class="badge badge-accent">' + esc(booking.tag) + "</span></p>" +
+          '<span class="badge badge-accent">' + esc(booking.tag) + "</span> " +
+          '<span class="badge badge-busy">Unpaid</span></p>' +
         "<p>" + esc(booking.serviceName) + " on " + esc(formatPickup(booking.pickupAt)) + ", from " +
           esc(booking.pickup) + " to " + esc(booking.destination) + ". Total " + money(booking.total) + ".</p>" +
+        "<p>Pay now to confirm it.</p>" +
         '<div class="actions">' +
           '<a class="btn btn-primary" href="' + esc(PHCUI.url("customer/payment.html") + "?booking=" + encodeURIComponent(booking.id)) + '">Pay now</a>' +
           '<a class="btn btn-ghost" href="' + esc(PHCUI.url("customer/my-bookings.html")) + '">My bookings</a>' +
