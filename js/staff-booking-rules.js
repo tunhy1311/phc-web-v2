@@ -26,6 +26,12 @@ var PHCStaffBooking = (function () {
     return list.filter(function (c) { return phoneDigits(c.phone) === phone; });
   }
 
+  function customerFromQuery(customers, search) {
+    var id = text(new URLSearchParams(search || "").get("customer") || "");
+    if (!id) return null;
+    return (customers || []).filter(function (c) { return c.id === id; })[0] || null;
+  }
+
   function validateNewCustomer(data, customers) {
     var d = data || {};
     var errors = {};
@@ -113,6 +119,7 @@ var PHCStaffBooking = (function () {
   return {
     CHANNELS: CHANNELS,
     findCustomers: findCustomers,
+    customerFromQuery: customerFromQuery,
     validateNewCustomer: validateNewCustomer,
     buildCustomer: buildCustomer,
     validateStaffBooking: validateStaffBooking,

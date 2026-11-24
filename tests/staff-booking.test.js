@@ -54,6 +54,18 @@
     });
   });
 
+  test("customerFromQuery: the verified caller from US12 is selected by id", function () {
+    equal(S.customerFromQuery(CUSTOMERS, "?customer=c1").name, "Sarah Jones");
+    equal(S.customerFromQuery(CUSTOMERS, "?customer=%20c1%20").id, "c1");
+  });
+
+  test("customerFromQuery: unknown, empty or missing customer id selects nobody", function () {
+    equal(S.customerFromQuery(CUSTOMERS, "?customer=c999"), null);
+    equal(S.customerFromQuery(CUSTOMERS, "?customer="), null);
+    equal(S.customerFromQuery(CUSTOMERS, ""), null);
+    equal(S.customerFromQuery([], "?customer=c1"), null);
+  });
+
   test("findCustomers: finds by phone with or without spaces and +44", function () {
     equal(S.findCustomers(CUSTOMERS, "07123456789").length, 1);
     equal(S.findCustomers(CUSTOMERS, "+44 7123 456789").length, 1);

@@ -3,7 +3,8 @@
 
   var root = document.getElementById("page-root");
   var esc = PHCUI.escapeHtml;
-  var selectedId = null;
+  var startCustomer = PHCStaffBooking.customerFromQuery(PHCStore.get("customers") || [], window.location.search);
+  var selectedId = startCustomer ? startCustomer.id : null;
   var FIELDS = {
     pickup: "#nb-pickup", destination: "#nb-destination", date: "#nb-date", time: "#nb-time",
     passengers: "#nb-passengers", hours: "#nb-hours", flight: "#nb-flight",
@@ -58,7 +59,7 @@
         "<h2>Access refused</h2>" +
         "<p>Sign in as call centre staff to make a booking for a customer.</p>" +
         '<div class="actions">' +
-          '<a class="btn btn-primary" href="' + esc(PHCUI.url("staff/login.html") + "?next=" + encodeURIComponent("new-booking.html")) + '">Staff sign in</a>' +
+          '<a class="btn btn-primary" href="' + esc(PHCUI.url("staff/login.html") + "?next=" + encodeURIComponent("new-booking.html" + window.location.search)) + '">Staff sign in</a>' +
         "</div>" +
       "</div>";
   }
