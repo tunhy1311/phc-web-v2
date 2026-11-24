@@ -72,6 +72,20 @@
     equal(PHCBookingChanges.checkChange(booking(48, { pickupAt: "not a date" }), NOW).allowed, false);
   });
 
+  // ---------- statusLabel ----------
+  test("statusLabel: unpaid, confirmed and cancelled bookings get their own label", function () {
+    equal(PHCBookingChanges.statusLabel(booking(48, { status: "unpaid" })), "Unpaid");
+    equal(PHCBookingChanges.statusLabel(booking(48, { status: "confirmed" })), "Confirmed");
+    equal(PHCBookingChanges.statusLabel(booking(48, { status: "cancelled" })), "Cancelled");
+  });
+
+  test("statusLabel: an unpaid booking can still be cancelled or amended 24h ahead", function () {
+    var unpaid = booking(72, { status: "unpaid" });
+    equal(PHCBookingChanges.checkChange(unpaid, NOW).allowed, true);
+    equal(PHCBookingChanges.cancelBooking(unpaid, NOW).booking.status, "cancelled");
+    equal(PHCBookingChanges.amendBooking(unpaid, changesFor(96, 7), NOW).booking.status, "unpaid");
+  });
+
   // ---------- cancelBooking ----------
   test("cancelBooking: status becomes cancelled and cancelledAt is set", function () {
     var original = booking(48);

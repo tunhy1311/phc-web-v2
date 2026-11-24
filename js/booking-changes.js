@@ -5,6 +5,8 @@
  * Load after: data.js, rules.js.
  *
  *   PHCBookingChanges.RULE_MESSAGE
+ *   PHCBookingChanges.statusLabel(booking)       -> "Cancelled" | "Unpaid" | "Confirmed"
+ *        status "unpaid" is set by US08 (payment) until the booking is paid; "cancelled" is set by cancelBooking.
  *   PHCBookingChanges.checkChange(booking, now)  -> {allowed, reason}
  *        allowed = PHCRules.canChangeBooking (pick-up at least 24h away, exactly 24h is allowed).
  *        reason explains the 24-hour rule when the change is refused.
@@ -46,6 +48,12 @@ var PHCBookingChanges = (function () {
   function findService(id) {
     var list = typeof PHC_DATA !== "undefined" && PHC_DATA.services ? PHC_DATA.services : [];
     return list.filter(function (s) { return s.id === id; })[0] || null;
+  }
+
+  function statusLabel(booking) {
+    if (booking && booking.status === "cancelled") return "Cancelled";
+    if (booking && booking.status === "unpaid") return "Unpaid";
+    return "Confirmed";
   }
 
   function checkChange(booking, now) {
@@ -129,6 +137,7 @@ var PHCBookingChanges = (function () {
 
   return {
     RULE_MESSAGE: RULE_MESSAGE,
+    statusLabel: statusLabel,
     checkChange: checkChange,
     cancelBooking: cancelBooking,
     priceFor: priceFor,

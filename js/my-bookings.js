@@ -72,9 +72,9 @@
   }
 
   function statusBadge(b) {
-    return b.status === "cancelled"
-      ? '<span class="badge badge-busy">Cancelled</span>'
-      : '<span class="badge badge-available">Confirmed</span>';
+    var label = PHCBookingChanges.statusLabel(b);
+    var cls = label === "Confirmed" ? "badge-available" : "badge-busy";
+    return '<span class="badge ' + cls + '">' + label + "</span>";
   }
 
   function sizeOption(size, text, selected) {
