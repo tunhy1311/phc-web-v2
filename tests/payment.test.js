@@ -119,8 +119,14 @@
     equal(before.status, "unpaid");
   });
 
+  test("markPaid: the amount paid is stored so a later amendment cannot change it", function () {
+    var b = booking();
+    var after = P.markPaid(b, { method: "card", brand: "Visa", last4: "4242", paidAt: "x", reference: "r" });
+    equal(after.payment.amount, b.total);
+  });
+
   test("markPaid: only method, brand, last 4 digits, time and reference are stored", function () {
     var after = P.markPaid(booking(), { method: "card", brand: "Visa", last4: "4242", number: "4242424242424242", cvv: "123", paidAt: "x", reference: "r" });
-    equal(Object.keys(after.payment).sort().join(","), "brand,last4,method,paidAt,reference");
+    equal(Object.keys(after.payment).sort().join(","), "amount,brand,last4,method,paidAt,reference");
   });
 })();

@@ -11,7 +11,7 @@
       id: "bk12ab", customerId: "c1", serviceId: "airport", serviceName: "Airport transfer", flight: "BA123", hours: null,
       pickup: "1 High St", destination: "Heathrow", pickupAt: "2026-12-05T14:30:00", passengers: 3, carSize: 4,
       baseFare: 45, discount: 6.75, total: 38.25, channel: "online", tag: "Priority", status: "confirmed",
-      payment: { method: "card", brand: "Visa", last4: "4242", paidAt: "2026-11-25T10:00:00Z", reference: "PAY-ABC123" }
+      payment: { method: "card", brand: "Visa", last4: "4242", paidAt: "2026-11-25T10:00:00Z", reference: "PAY-ABC123", amount: 38.25 }
     };
     for (var k in extra) b[k] = extra[k];
     return b;
@@ -79,8 +79,31 @@
     equal(r.total, 38.25);
   });
 
+  test("receipt: after an amendment the receipt keeps the amount paid and says the booking changed", function () {
+    var r = PHCReceipt.build(paid({ total: 52.5, baseFare: 52.5, discount: 0 }));
+    equal(r.amended, true);
+    equal(r.total, 38.25);
+    equal(r.currentTotal, 52.5);
+    equal(r.lines.length, 0);
+  });
+
+  test("receipt: an unchanged booking is not marked as amended", function () {
+    var r = PHCReceipt.build(paid());
+    equal(r.amended, false);
+    equal(r.total, 38.25);
+  });
+
+  test("receipt: a payment saved without an amount falls back to the booking total", function () {
+    var b = paid();
+    delete b.payment.amount;
+    var r = PHCReceipt.build(b);
+    equal(r.amended, false);
+    equal(r.total, 38.25);
+    equal(r.lines.length, 2);
+  });
+
   test("receipt: no discount line when no discount was applied", function () {
-    var r = PHCReceipt.build(paid({ discount: 0, total: 45 }));
+    var r = PHCReceipt.build(paid({ discount: 0, total: 45, payment: { method: "card", brand: "Visa", last4: "4242", paidAt: "2026-11-25T10:00:00Z", reference: "PAY-ABC123", amount: 45 } }));
     equal(r.lines.length, 1);
     equal(r.total, 45);
   });

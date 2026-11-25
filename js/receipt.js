@@ -16,7 +16,8 @@
 
   var params = new URLSearchParams(window.location.search);
   var bookingId = params.get("booking") || "";
-  var customer = PHCAuth.requireCustomer("receipt.html" + (bookingId ? "?booking=" + encodeURIComponent(bookingId) : ""));
+  var nextUrl = "receipt.html" + (bookingId ? "?booking=" + encodeURIComponent(bookingId) : "");
+  var customer = PHCAuth.requireCustomer(nextUrl);
   if (!customer) return;
 
   root.classList.remove("placeholder");
@@ -36,6 +37,14 @@
   }
 
   function render() {
+    // Check the signed-in customer every time, so a sign-out or account switch in another tab
+    // never leaves someone else's receipt on screen.
+    customer = PHCAuth.currentCustomer();
+    if (!customer) {
+      root.innerHTML = "";
+      PHCAuth.requireCustomer(nextUrl);
+      return;
+    }
     var booking = (PHCStore.get("bookings") || []).filter(function (b) { return b.id === bookingId; })[0] || null;
     var check = PHCReceipt.canView(booking, { role: "customer", id: customer.id });
     if (!check.ok) return refusal(check.reason);
@@ -69,6 +78,9 @@
         '<p class="muted">Paid by ' + esc(r.paymentMethod) +
           (r.paidAt ? " on " + esc(new Date(r.paidAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })) : "") +
           (r.paymentReference ? " (payment " + esc(r.paymentReference) + ")" : "") + ".</p>" +
+        (r.amended
+          ? '<p class="muted" id="receipt-amended">This booking was changed after payment. The amount above is what was paid; the booking total is now ' + money(r.currentTotal) + ".</p>"
+          : "") +
       "</article>" +
       '<div class="actions no-print">' +
         '<button type="button" class="btn btn-primary" id="print-receipt">Print receipt</button>' +
@@ -80,4 +92,5 @@
 
   render();
   document.addEventListener("phc:reset", render);
+  document.addEventListener("phc:session-change", render);
 })();

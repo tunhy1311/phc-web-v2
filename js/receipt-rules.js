@@ -7,6 +7,8 @@
  *        reason: "not-found" | "sign-in" | "cancelled" | "unpaid" | ""
  *        A receipt exists only for a paid booking (booking.payment saved by the payment page, US08).
  *   PHCReceipt.build(booking)             -> receipt model for the page (reference, journey, price lines, payment)
+ *        total = the amount recorded at payment (payment.amount); if the booking was amended after
+ *        payment, amended = true, the fare lines are left out and currentTotal holds the new booking total.
  *   PHCReceipt.reasonText(reason)         -> sentence for the customer
  *   PHCReceipt.referenceOf(booking)       -> booking reference shown at the top of the receipt
  *
@@ -55,8 +57,14 @@ var PHCReceipt = (function () {
     var base = Number(booking.baseFare);
     var discount = Number(booking.discount) || 0;
     var total = Number(booking.total);
-    var lines = [{ label: booking.serviceName + " fare", amount: base }];
-    if (discount > 0) lines.push({ label: "Online booking discount", amount: -discount });
+    var paidAmount = booking.payment && typeof booking.payment.amount === "number" ? booking.payment.amount : null;
+    // A booking can be amended after payment (US10). The receipt always shows what was actually paid.
+    var amended = paidAmount !== null && Math.round(paidAmount * 100) !== Math.round(total * 100);
+    var lines = [];
+    if (!amended) {
+      lines.push({ label: booking.serviceName + " fare", amount: base });
+      if (discount > 0) lines.push({ label: "Online booking discount", amount: -discount });
+    }
 
     return {
       reference: referenceOf(booking),
@@ -73,7 +81,9 @@ var PHCReceipt = (function () {
       flight: booking.flight || "",
       hours: booking.hours || null,
       lines: lines,
-      total: total
+      total: paidAmount !== null ? paidAmount : total,
+      amended: amended,
+      currentTotal: total
     };
   }
 
