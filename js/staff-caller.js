@@ -4,6 +4,15 @@
   var root = document.getElementById("page-root");
   if (!root) return;
 
+  if (!PHCCallerVerification.isStaffSession(PHCStore.session())) {
+    root.innerHTML =
+      '<section class="card">' +
+        '<h2>Staff access required</h2>' +
+        '<p class="error" role="alert">This page is available to signed-in staff only.</p>' +
+      '</section>';
+    return;
+  }
+
   function esc(value) {
     return PHCUI.escapeHtml(String(value == null ? "" : value));
   }

@@ -3,7 +3,12 @@ var PHCCallerVerification = (function () {
   "use strict";
 
   function normalPhone(value) {
-    return String(value || "").replace(/[\s\-()]/g, "");
+    var phone = String(value || "").trim().replace(/[\s\-()]/g, "");
+
+    // Store and compare UK numbers in domestic form so that 07123... and
+    // +447123... identify the same customer account.
+    if (/^\+44[1-9]\d{9}$/.test(phone)) return "0" + phone.slice(3);
+    return phone;
   }
 
   function findCustomer(customers, bookings, type, query) {
@@ -44,8 +49,17 @@ var PHCCallerVerification = (function () {
     if (!customer) return false;
     var enteredPostcode = String(postcode || "").toUpperCase().replace(/\s/g, "");
     var savedPostcode = String(customer.postcode || "").toUpperCase().replace(/\s/g, "");
+    var enteredDob = String(dob || "").trim();
+    var savedDob = String(customer.dob || "").trim();
+
+    // Missing answers must never compare equal and unlock an account.
+    if (!enteredPostcode || !savedPostcode || !enteredDob || !savedDob) return false;
     return enteredPostcode === savedPostcode &&
-      String(dob || "") === String(customer.dob || "");
+      enteredDob === savedDob;
+  }
+
+  function isStaffSession(session) {
+    return !!(session && session.role === "staff" && String(session.id || "").trim());
   }
 
   function createCustomer(existingCustomers, details, id) {
@@ -90,6 +104,7 @@ var PHCCallerVerification = (function () {
     normalPhone: normalPhone,
     findCustomer: findCustomer,
     verifyCustomer: verifyCustomer,
+    isStaffSession: isStaffSession,
     createCustomer: createCustomer
   };
 })();

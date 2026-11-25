@@ -24,6 +24,11 @@
     equal(PHCCallerVerification.findCustomer(customers, bookings, "booking", "phc-abc").id, "c1");
   });
 
+  test("caller search: UK domestic and +44 phone formats match the same customer", function () {
+    equal(PHCCallerVerification.findCustomer(customers, bookings, "phone", "+44 7111 222333").id, "c1");
+    equal(PHCCallerVerification.normalPhone("+44 (7111) 222-333"), "07111222333");
+  });
+
   test("caller verification: both correct security answers unlock the account", function () {
     equal(PHCCallerVerification.verifyCustomer(customers[0], "e1 6an", "1990-04-15"), true);
   });
@@ -31,6 +36,18 @@
   test("caller verification: one incorrect answer returns Verification failed", function () {
     equal(PHCCallerVerification.verifyCustomer(customers[0], "E1 6AN", "1991-04-15"), false);
     equal(PHCCallerVerification.verifyCustomer(customers[0], "SW1A 1AA", "1990-04-15"), false);
+  });
+
+  test("caller verification: missing stored or entered security answers never unlock", function () {
+    equal(PHCCallerVerification.verifyCustomer(customers[0], "", ""), false);
+    equal(PHCCallerVerification.verifyCustomer({ postcode: "", dob: "" }, "", ""), false);
+    equal(PHCCallerVerification.verifyCustomer({ postcode: "E1 6AN", dob: "" }, "E1 6AN", ""), false);
+  });
+
+  test("staff access: only a valid staff session may use caller lookup", function () {
+    equal(PHCCallerVerification.isStaffSession({ role: "staff", id: "s1" }), true);
+    equal(PHCCallerVerification.isStaffSession({ role: "customer", id: "c1" }), false);
+    equal(PHCCallerVerification.isStaffSession(null), false);
   });
 
   test("new customer: valid details create a normalized customer record", function () {
