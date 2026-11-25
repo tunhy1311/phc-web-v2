@@ -1,0 +1,23 @@
+/* US10 - My bookings page (PHC-25). Only classes used by js/my-bookings.js. */
+.booking-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.booking-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.booking-panel:not(:empty) {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.booking-updated {
+  border-color: var(--success);
+}
