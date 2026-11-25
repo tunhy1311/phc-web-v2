@@ -110,6 +110,14 @@ var PHCEnquiry = (function () {
       .sort(function (a, b) { return numberOf(b.reference) - numberOf(a.reference); });
   }
 
+  // Another tab changed the shared state (ui.js fires "phc:session-change" for any write).
+  // `shownFor` and `now` are "role:id", or "" when nobody is signed in. Returns the type to
+  // redraw the form with, or null to leave the page and what was typed alone (PR #18 review).
+  function redrawType(shownFor, now, type, isCustomer) {
+    if (shownFor === now) return null;
+    return type === "booking" && isCustomer ? "booking" : "general";
+  }
+
   return {
     TYPES: TYPES,
     MESSAGE_ERROR: MESSAGE_ERROR,
@@ -119,7 +127,8 @@ var PHCEnquiry = (function () {
     createEnquiry: createEnquiry,
     statusLabel: statusLabel,
     bookingLabel: bookingLabel,
-    forCustomer: forCustomer
+    forCustomer: forCustomer,
+    redrawType: redrawType
   };
 })();
 

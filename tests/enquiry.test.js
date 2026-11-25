@@ -100,4 +100,19 @@
     equal(label.indexOf("Airport transfer to Heathrow, "), 0);
     equal(PHCEnquiry.bookingLabel(null), "Booking no longer found");
   });
+  test("US03 a write from another tab with the same session leaves the form alone", function () {
+    equal(PHCEnquiry.redrawType("customer:c1", "customer:c1", "general", true), null);
+    equal(PHCEnquiry.redrawType("customer:c1", "customer:c1", "booking", true), null);
+    equal(PHCEnquiry.redrawType("", "", "general", false), null);
+  });
+
+  test("US03 signing in or out in another tab redraws the form", function () {
+    equal(PHCEnquiry.redrawType("", "customer:c1", "general", true), "general");
+    equal(PHCEnquiry.redrawType("customer:c1", "customer:c2", "booking", true), "booking");
+  });
+
+  test("US03 a booking enquiry falls back to General when no customer is signed in any more", function () {
+    equal(PHCEnquiry.redrawType("customer:c1", "", "booking", false), "general");
+    equal(PHCEnquiry.redrawType("customer:c1", "staff:s1", "booking", false), "general");
+  });
 })();
