@@ -373,38 +373,20 @@ var PHCBookDetails = (function () {
     var total = PHCRules.applyOnlineDiscount(base);
     return { base: base, discount: Math.round((base - total) * 100) / 100, total: total };
   }
-    function availabilityFor(carSize, pickupAt) {
-    var cars = PHCStore.get("cars") || [];
-    var bookings = PHCStore.get("bookings") || [];
-    var selectedTime = new Date(pickupAt).getTime();
-
-    function availableCount(size) {
-      var fleetCount = cars.filter(function (car) {
-        return Number(car.size) === Number(size) &&
-          car.status === "available";
-      }).length;
-
-      var bookedCount = bookings.filter(function (booking) {
-        var bookingTime = new Date(booking.pickupAt).getTime();
-
-        return booking.status !== "cancelled" &&
-          Number(booking.carSize) === Number(size) &&
-          Math.abs(bookingTime - selectedTime) < 2 * 60 * 60 * 1000;
-      }).length;
-
-      return Math.max(0, fleetCount - bookedCount);
-    }
-
-    var count = availableCount(carSize);
-    var alternativeSize = Number(carSize) === 4 ? 7 : 4;
-    var alternativeCount = availableCount(alternativeSize);
-
-    return {
-      available: count > 0,
-      count: count,
-      alternativeSize: alternativeCount > 0 ? alternativeSize : null,
-      nextTime: new Date(selectedTime + 60 * 60 * 1000).toISOString()
-    };
+  function availabilityFor(
+    carSize,
+    pickupAt,
+    passengers,
+    requestedHours
+  ) {
+    return PHCRules.vehicleAvailability(
+      PHCStore.get("cars") || [],
+      PHCStore.get("bookings") || [],
+      carSize,
+      pickupAt,
+      passengers,
+      requestedHours
+    );
   }
 
   function renderSummary() {
@@ -413,7 +395,12 @@ var PHCBookDetails = (function () {
     var v = d.details || {};
     var customer = currentCustomer();
     var price = priceFor(service, d);
-        var availability = availabilityFor(v.carSize, d.pickupAt);
+    var availability = availabilityFor(
+      v.carSize,
+      d.pickupAt,
+      v.passengers,
+      service.byTime ? d.hours : 2
+    );
 
     var rows = [
       ["Service", service.name],
@@ -426,7 +413,7 @@ var PHCBookDetails = (function () {
     if (service.byTime) rows.push(["Hours of hire", String(d.hours)]);
     if (service.needsFlight) rows.push(["Flight number", d.flight || "Not given"]);
     if (customer) rows.push(["Booked by", customer.name]);
-        rows.push([
+    rows.push([
       "Vehicle availability",
       availability.available
         ? "Available (" + availability.count + " vehicle(s))"
@@ -440,13 +427,29 @@ var PHCBookDetails = (function () {
         '<p class="hint-box">A ' + esc(String(v.carSize)) +
         '-seater is available for the selected time.</p>';
     } else {
+      var suggestion = "";
+
+      if (availability.alternativeSize) {
+        suggestion +=
+          " Try a " +
+          availability.alternativeSize +
+          "-seater.";
+      }
+
+      if (availability.nextTime) {
+        suggestion +=
+          " Or try " +
+          esc(formatPickup(availability.nextTime)) +
+          ".";
+      } else {
+        suggestion +=
+          " Please choose another date or time.";
+      }
+
       availabilityMessage =
-        '<p class="error" role="alert">Not available for the selected size and time. ' +
-        (availability.alternativeSize
-          ? "Try a " + availability.alternativeSize + "-seater, or try " +
-            esc(formatPickup(availability.nextTime)) + "."
-          : "Try another time, such as " +
-            esc(formatPickup(availability.nextTime)) + ".") +
+        '<p class="error" role="alert">' +
+        "Not available for the selected size and time." +
+        suggestion +
         "</p>";
     }
 
@@ -458,7 +461,7 @@ var PHCBookDetails = (function () {
           rows.map(function (r) {
             return "<div><dt>" + esc(r[0]) + "</dt><dd>" + esc(r[1]) + "</dd></div>";
           }).join("") +
-                "</dl>" +
+        "</dl>" +
         availabilityMessage +
         '<dl class="summary-list price-list">' +
           "<div><dt>Fare" + (service.byTime ? " (" + esc(d.hours) + " h × " + money(service.fromPrice) + ")" : "") +
@@ -477,7 +480,7 @@ var PHCBookDetails = (function () {
     summaryStep.querySelector('[data-act="edit"]').addEventListener("click", function () {
       showStep("details");
     });
-        var confirmButton = summaryStep.querySelector("#bk-confirm");
+    var confirmButton = summaryStep.querySelector("#bk-confirm");
     confirmButton.disabled = !availability.available;
     confirmButton.addEventListener("click", confirmBooking);
   }
@@ -507,7 +510,12 @@ var PHCBookDetails = (function () {
       button.disabled = false;
       return;
     }
-         var currentAvailability = availabilityFor(v.carSize, check.pickupAt);
+    var currentAvailability = availabilityFor(
+      v.carSize,
+      check.pickupAt,
+      v.passengers,
+      service.byTime ? d.hours : 2
+    );
 
     if (!currentAvailability.available) {
       errorBox.textContent =

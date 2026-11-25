@@ -82,6 +82,78 @@ var PHCRules = (function () {
     return roundMoney(total * (1 - ONLINE_DISCOUNT));
   }
 
+  /**
+   * Checks fleet availability for a requested vehicle size and time interval.
+   * Also returns a capacity-safe alternative size and the next genuinely
+   * available start time (searched hourly for the following 24 hours).
+   * This function is pure so the availability rules can be unit tested.
+   */
+  function vehicleAvailability(cars, bookings, carSize, pickupAt, passengers, requestedHours) {
+    var fleet = Array.isArray(cars) ? cars : [];
+    var existingBookings = Array.isArray(bookings) ? bookings : [];
+    var selectedStart = toTime(pickupAt);
+    var durationHours = Number(requestedHours);
+
+    // Fixed-price journeys currently use a two-hour estimated duration.
+    if (!isFinite(durationHours) || durationHours <= 0) durationHours = 2;
+
+    function bookingEndTime(booking, bookingStart) {
+      var explicitEnd = booking.endAt || booking.dropoffAt;
+      var endTime = toTime(explicitEnd);
+      if (isFinite(endTime) && endTime > bookingStart) return endTime;
+
+      var bookingHours = Number(booking.hours);
+      if (!isFinite(bookingHours) || bookingHours <= 0) bookingHours = 2;
+      return bookingStart + bookingHours * HOUR_MS;
+    }
+
+    function availableCount(size, startTime) {
+      if (!isFinite(startTime)) return 0;
+      var requestedEnd = startTime + durationHours * HOUR_MS;
+      var fleetCount = fleet.filter(function (car) {
+        return Number(car.size) === Number(size) && car.status === "available";
+      }).length;
+
+      var bookedCount = existingBookings.filter(function (booking) {
+        if (!booking || booking.status === "cancelled") return false;
+        if (Number(booking.carSize) !== Number(size)) return false;
+
+        var bookingStart = toTime(booking.pickupAt);
+        if (!isFinite(bookingStart)) return false;
+        var bookingEnd = bookingEndTime(booking, bookingStart);
+
+        return startTime < bookingEnd && requestedEnd > bookingStart;
+      }).length;
+
+      return Math.max(0, fleetCount - bookedCount);
+    }
+
+    var count = availableCount(carSize, selectedStart);
+    var alternativeSize = Number(carSize) === 4 ? 7 : 4;
+    var alternativeFits = Number(alternativeSize) >= Number(passengers);
+    var alternativeCount = alternativeFits
+      ? availableCount(alternativeSize, selectedStart)
+      : 0;
+    var nextTime = null;
+
+    if (isFinite(selectedStart)) {
+      for (var hour = 1; hour <= 24; hour++) {
+        var candidateStart = selectedStart + hour * HOUR_MS;
+        if (availableCount(carSize, candidateStart) > 0) {
+          nextTime = new Date(candidateStart).toISOString();
+          break;
+        }
+      }
+    }
+
+    return {
+      available: count > 0,
+      count: count,
+      alternativeSize: alternativeCount > 0 ? alternativeSize : null,
+      nextTime: nextTime
+    };
+  }
+
   // ---------- US05: booking details ----------
 
   var CAR_SIZES = [4, 7];           // passenger seats of the cars in the fleet
@@ -219,6 +291,7 @@ var PHCRules = (function () {
     canChangeBooking: canChangeBooking,
     baseFare: baseFare,
     applyOnlineDiscount: applyOnlineDiscount,
+    vehicleAvailability: vehicleAvailability,
     combineDateTime: combineDateTime,
     suggestCarSize: suggestCarSize,
     bookingTag: bookingTag,

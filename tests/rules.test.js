@@ -68,6 +68,60 @@
     throws(function () { PHCRules.applyOnlineDiscount(-1); });
   });
 
+  // ---------- PHC-21: vehicle availability ----------
+  function availableCar(id, size) {
+    return { id: id, size: size, status: "available" };
+  }
+
+  function fleetBooking(id, size, startHours, durationHours, status) {
+    return {
+      id: id,
+      carSize: size,
+      pickupAt: new Date(NOW.getTime() + startHours * HOUR).toISOString(),
+      hours: durationHours,
+      status: status || "confirmed"
+    };
+  }
+
+  test("vehicleAvailability: alternative size must fit all passengers", function () {
+    var cars = [availableCar("four", 4), availableCar("seven", 7)];
+    var bookings = [fleetBooking("busy-seven", 7, 1, 2)];
+    var result = PHCRules.vehicleAvailability(
+      cars, bookings, 7, new Date(NOW.getTime() + HOUR), 6, 2
+    );
+    equal(result.available, false);
+    equal(result.alternativeSize, null);
+  });
+
+  test("vehicleAvailability: suggested time is checked and skips occupied hours", function () {
+    var cars = [availableCar("four", 4)];
+    var bookings = [fleetBooking("busy-four", 4, 1, 4)];
+    var result = PHCRules.vehicleAvailability(
+      cars, bookings, 4, new Date(NOW.getTime() + HOUR), 2, 2
+    );
+    equal(result.available, false);
+    equal(result.nextTime, new Date(NOW.getTime() + 5 * HOUR).toISOString());
+  });
+
+  test("vehicleAvailability: actual booking duration prevents interval overlap", function () {
+    var cars = [availableCar("four", 4)];
+    var bookings = [fleetBooking("daily-hire", 4, 3, 8)];
+    var result = PHCRules.vehicleAvailability(
+      cars, bookings, 4, new Date(NOW.getTime() + 7 * HOUR), 2, 2
+    );
+    equal(result.available, false);
+  });
+
+  test("vehicleAvailability: cancelled bookings do not consume a vehicle", function () {
+    var cars = [availableCar("four", 4)];
+    var bookings = [fleetBooking("cancelled", 4, 1, 8, "cancelled")];
+    var result = PHCRules.vehicleAvailability(
+      cars, bookings, 4, new Date(NOW.getTime() + 2 * HOUR), 2, 2
+    );
+    equal(result.available, true);
+    equal(result.count, 1);
+  });
+
   // ---------- baseFare ----------
   function service(id) {
     return PHC_DATA.services.filter(function (s) { return s.id === id; })[0];
