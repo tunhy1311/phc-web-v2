@@ -1,7 +1,7 @@
 /*
  * US10 - My bookings: view, cancel or amend a booking (PHC-25). Owner: Huy.
  * Fills #page-root on customer/my-bookings.html.
- * Load after: data.js, store.js, ui.js, validators.js, rules.js, auth.js, booking-changes.js, receipt-rules.js.
+ * Load after: data.js, store.js, ui.js, validators.js, rules.js, auth.js, booking-changes.js, receipt-rules.js, offers.js.
  *
  * All rules live in PHCBookingChanges (pure functions, unit tested). This file only draws the page
  * and saves the result with PHCStore.update("bookings", ...).
@@ -96,6 +96,28 @@
       esc(PHCUI.url("customer/receipt.html") + "?booking=" + encodeURIComponent(b.id)) + '">View receipt</a>';
   }
 
+  function activeOffer() {
+    var issued = PHCOffers.issue(customer.id, PHCStore.get("bookings") || [],
+      PHCStore.get("offers") || [], new Date());
+    if (issued.issued) PHCStore.set("offers", issued.offers);
+    if (!issued.offer) return null;
+    return PHCOffers.validate(issued.offer.code, customer.id, issued.offers, new Date()).ok
+      ? issued.offer
+      : null;
+  }
+
+  function offerCard(offer) {
+    if (!offer) return "";
+    return '<article class="card" id="loyalty-offer">' +
+      '<p class="eyebrow">Loyal customer offer</p>' +
+      '<h2>10% off your next booking</h2>' +
+      '<p>Use this single-use code at checkout: <strong>' + esc(offer.code) + '</strong></p>' +
+      '<p class="muted">Expires ' + esc(new Date(offer.expiresAt).toLocaleDateString("en-GB", {
+        day: "numeric", month: "long", year: "numeric"
+      })) + '.</p>' +
+    '</article>';
+  }
+
   function bookingCard(b) {
     var cancelled = b.status === "cancelled";
     return (
@@ -125,6 +147,7 @@
   function renderList(message) {
     var list = myBookings();
     var html = '<div id="changes-status" class="success" role="status" aria-live="polite">' + esc(message || "") + "</div>";
+    html += offerCard(activeOffer());
     if (!list.length) {
       html += '<div class="card"><p>You have no bookings yet.</p>' +
         '<p><a class="btn btn-primary" href="' + esc(PHCUI.url("customer/book.html")) + '">Book a car</a></p></div>';

@@ -6,9 +6,10 @@
   var params = new URLSearchParams(window.location.search);
   var bookingId = params.get("booking") || "";
   var paypalResult = params.get("paypal");
+  var offerResult = params.get("offer");
   var FIELDS = { name: "#card-name", number: "#card-number", expiry: "#card-expiry", cvv: "#card-cvv" };
 
-  if (paypalResult) {
+  if (paypalResult || offerResult) {
     window.history.replaceState(null, "", window.location.pathname + "?booking=" + encodeURIComponent(bookingId));
   }
 
@@ -98,6 +99,13 @@
           '<div><dt>Status</dt><dd><span class="badge badge-busy">Unpaid</span></dd></div>' +
         "</dl>" +
         '<dl class="summary-list price-list">' +
+          "<div><dt>Fare</dt><dd>" + money(booking.baseFare) + "</dd></div>" +
+          (Number(booking.discount) > 0
+            ? "<div><dt>Online discount (15%)</dt><dd>-" + money(booking.discount) + "</dd></div>"
+            : "") +
+          (Number(booking.offerDiscount) > 0
+            ? "<div><dt>Offer code " + esc(booking.offerCode) + " (10%)</dt><dd>-" + money(booking.offerDiscount) + "</dd></div>"
+            : "") +
           '<div class="total"><dt>Total to pay</dt><dd>' + money(booking.total) + "</dd></div>" +
         "</dl>" +
       "</div>"
@@ -120,6 +128,13 @@
         summaryHtml(booking) +
         '<div class="card">' +
           "<h2>How would you like to pay?</h2>" +
+          '<form class="form" id="offer-form" novalidate>' +
+            '<div class="field"><label for="offer-code">Offer code</label>' +
+              '<input id="offer-code" name="offerCode" type="text" autocomplete="off" value="' + esc(booking.offerCode || "") + '">' +
+              '<p class="hint">Eligible customers can apply one 10% loyalty offer after the online discount.</p>' +
+            "</div>" +
+            '<div class="actions"><button type="submit" class="btn btn-ghost">Apply offer</button></div>' +
+          "</form>" +
           '<fieldset class="field pay-methods-field">' +
             '<legend class="sr-only">Payment method</legend>' +
             '<div class="pay-methods">' +
@@ -168,7 +183,21 @@
       "</div>";
 
     var form = root.querySelector("#card-form");
+    var offerForm = root.querySelector("#offer-form");
     var panel = root.querySelector("#paypal-panel");
+
+    offerForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var check = PHCOffers.validate(offerForm.elements.offerCode.value, booking.customerId,
+        PHCStore.get("offers") || [], new Date());
+      if (!check.ok) {
+        renderForm(booking, check.message);
+        return;
+      }
+      var updated = PHCOffers.applyToBooking(booking, check.offer);
+      saveBooking(updated);
+      renderForm(updated, "Offer code applied. Your total now includes an extra 10% discount.");
+    });
 
     root.querySelector(".pay-methods").addEventListener("change", function () {
       var method = root.querySelector('input[name="method"]:checked').value;
@@ -230,6 +259,16 @@
         render();
         return;
       }
+      if (booking.offerCode) {
+        var offerCheck = PHCOffers.validate(booking.offerCode, booking.customerId,
+          PHCStore.get("offers") || [], new Date());
+        if (!offerCheck.ok) {
+          var withoutOffer = PHCOffers.removeFromBooking(booking);
+          saveBooking(withoutOffer);
+          renderForm(withoutOffer, offerCheck.message);
+          return;
+        }
+      }
       var auth = PHCPayment.authorise(values.number);
       if (!auth.ok) {
         errorBox.textContent = auth.error;
@@ -246,6 +285,9 @@
         reference: PHCPayment.newReference()
       });
       saveBooking(paid);
+      if (paid.offerCode) {
+        PHCStore.set("offers", PHCOffers.consume(PHCStore.get("offers") || [], paid.offerCode, paid.id, new Date()));
+      }
       renderPaid(paid, true);
     }, 700);
   }
@@ -269,6 +311,7 @@
   document.addEventListener("phc:session-change", function () { render(); });
   document.addEventListener("phc:reset", function () { render(); });
 
-  render(paypalResult === "cancel" ? "PayPal payment was cancelled. Your booking is still unpaid." : "");
+  render(offerResult || (paypalResult === "cancel" ? "PayPal payment was cancelled. Your booking is still unpaid." : ""));
   paypalResult = null;
+  offerResult = null;
 })();

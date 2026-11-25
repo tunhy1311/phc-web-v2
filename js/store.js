@@ -3,7 +3,7 @@
  * All app state lives in ONE key: "phc-state-v1" (a JSON object).
  *
  * State keys (contract, do not rename):
- *   customers, session, cars, drivers, bookings, draftBooking, loginAttempts
+ *   customers, session, cars, drivers, bookings, offers, draftBooking, loginAttempts
  *
  * API:
  *   PHCStore.get(key)            -> deep copy of state[key]
@@ -33,6 +33,7 @@ var PHCStore = (function () {
       cars: clone(PHC_DATA.cars),
       drivers: clone(PHC_DATA.drivers),
       bookings: [],
+      offers: [],
       draftBooking: null,
       loginAttempts: {}
     };

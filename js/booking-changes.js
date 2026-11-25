@@ -131,6 +131,11 @@ var PHCBookingChanges = (function () {
     updated.baseFare = price.base;
     updated.discount = price.discount;
     updated.total = price.total;
+    // An offer is priced against the checkout total. A changed booking must be
+    // revalidated at checkout instead of keeping a stale offer reduction.
+    delete updated.offerCode;
+    delete updated.offerDiscount;
+    delete updated.totalBeforeOffer;
     updated.amendedAt = nowIso(now);
     return { ok: true, errors: {}, booking: updated, price: price, previousTotal: booking.total };
   }

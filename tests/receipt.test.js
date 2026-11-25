@@ -79,6 +79,17 @@
     equal(r.total, 38.25);
   });
 
+  test("receipt: offer code and amount are listed below the online discount", function () {
+    var r = PHCReceipt.build(paid({
+      offerCode: "PHC10-C1-ABC", offerDiscount: 3.83, total: 34.42,
+      payment: { method: "card", brand: "Visa", last4: "4242", paidAt: "2026-11-25T10:00:00Z", reference: "PAY-ABC123", amount: 34.42 }
+    }));
+    equal(r.lines.length, 3);
+    equal(r.lines[2].label, "Offer code PHC10-C1-ABC");
+    equal(r.lines[2].amount, -3.83);
+    equal(r.total, 34.42);
+  });
+
   test("receipt: after an amendment the receipt keeps the amount paid and says the booking changed", function () {
     var r = PHCReceipt.build(paid({ total: 52.5, baseFare: 52.5, discount: 0 }));
     equal(r.amended, true);
