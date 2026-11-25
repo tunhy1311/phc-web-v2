@@ -20,6 +20,13 @@
   var esc = PHCUI.escapeHtml;
   var BOOKING_NEXT = "enquiry.html?type=booking";
 
+  var shownFor = null; // the session the page was last drawn for, as sessionKey()
+
+  function sessionKey() {
+    var s = PHCStore.session();
+    return s ? s.role + ":" + s.id : "";
+  }
+
   function startType() {
     return new URLSearchParams(window.location.search).get("type") === "booking" ? "booking" : "general";
   }
@@ -84,6 +91,7 @@
       PHCAuth.requireCustomer(BOOKING_NEXT);
       return;
     }
+    shownFor = sessionKey();
     root.classList.remove("placeholder");
     root.classList.add("card");
     root.innerHTML =
@@ -190,7 +198,17 @@
     root.querySelector("#send-another").addEventListener("click", function () { render("general"); });
   }
 
-  document.addEventListener("phc:session-change", function () { render("general"); });
+  // ui.js fires this for ANY change another tab makes to the shared state, for example an
+  // enquiry sent there. Redraw only when the signed-in user really changed, and keep what was
+  // typed; otherwise leave the form (or the confirmation) as it is (PR #18 review).
+  document.addEventListener("phc:session-change", function () {
+    var form = root.querySelector("#enquiry-form");
+    var checked = form && form.querySelector('input[name="type"]:checked');
+    var type = PHCEnquiry.redrawType(shownFor, sessionKey(), checked ? checked.value : "general",
+      Boolean(PHCAuth.currentCustomer()));
+    if (!type) return;
+    render(type, form ? { message: valueOf(form, "message"), name: valueOf(form, "name"), email: valueOf(form, "email") } : null);
+  });
   document.addEventListener("phc:reset", function () { render("general"); });
 
   render(startType());
