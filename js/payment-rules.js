@@ -90,7 +90,8 @@ var PHCPayment = (function () {
       brand: payment.brand || "",
       last4: payment.last4 || "",
       paidAt: payment.paidAt,
-      reference: payment.reference
+      reference: payment.reference,
+      amount: Number(next.total)
     };
     return next;
   }
