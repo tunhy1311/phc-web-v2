@@ -122,6 +122,19 @@
     equal(result.count, 1);
   });
 
+  test("vehicleAvailability: sequential overlaps consume only peak concurrent capacity", function () {
+    var cars = [availableCar("four-a", 4), availableCar("four-b", 4)];
+    var bookings = [
+      fleetBooking("early", 4, 0, 2),
+      fleetBooking("late", 4, 4, 2)
+    ];
+    var result = PHCRules.vehicleAvailability(
+      cars, bookings, 4, new Date(NOW.getTime() + HOUR), 2, 4
+    );
+    equal(result.available, true);
+    equal(result.count, 1);
+  });
+
   // ---------- baseFare ----------
   function service(id) {
     return PHC_DATA.services.filter(function (s) { return s.id === id; })[0];

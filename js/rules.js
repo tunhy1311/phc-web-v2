@@ -114,18 +114,37 @@ var PHCRules = (function () {
         return Number(car.size) === Number(size) && car.status === "available";
       }).length;
 
-      var bookedCount = existingBookings.filter(function (booking) {
-        if (!booking || booking.status === "cancelled") return false;
-        if (Number(booking.carSize) !== Number(size)) return false;
+      var events = [];
+
+      existingBookings.forEach(function (booking) {
+        if (!booking || booking.status === "cancelled") return;
+        if (Number(booking.carSize) !== Number(size)) return;
 
         var bookingStart = toTime(booking.pickupAt);
-        if (!isFinite(bookingStart)) return false;
+        if (!isFinite(bookingStart)) return;
         var bookingEnd = bookingEndTime(booking, bookingStart);
+        if (!(startTime < bookingEnd && requestedEnd > bookingStart)) return;
 
-        return startTime < bookingEnd && requestedEnd > bookingStart;
-      }).length;
+        // Only the portion inside the requested interval affects capacity.
+        events.push({ time: Math.max(startTime, bookingStart), change: 1 });
+        events.push({ time: Math.min(requestedEnd, bookingEnd), change: -1 });
+      });
 
-      return Math.max(0, fleetCount - bookedCount);
+      // Count the peak number of simultaneous bookings, rather than every
+      // booking that touches the requested interval. End events come first so
+      // back-to-back bookings do not count as concurrent.
+      events.sort(function (a, b) {
+        return a.time - b.time || a.change - b.change;
+      });
+
+      var concurrent = 0;
+      var peakConcurrent = 0;
+      events.forEach(function (event) {
+        concurrent += event.change;
+        peakConcurrent = Math.max(peakConcurrent, concurrent);
+      });
+
+      return Math.max(0, fleetCount - peakConcurrent);
     }
 
     var count = availableCount(carSize, selectedStart);
