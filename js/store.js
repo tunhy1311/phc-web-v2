@@ -3,7 +3,14 @@
  * All app state lives in ONE key: "phc-state-v1" (a JSON object).
  *
  * State keys (contract, do not rename):
- *   customers, session, cars, drivers, bookings, offers, draftBooking, loginAttempts
+ *   customers, session, cars, drivers, bookings, offers, draftBooking, loginAttempts, enquiries
+ *
+ * enquiries (US03 PHC-18 writes, US16 PHC-14 reads and replies), one record per enquiry:
+ *   { id "enq-000001", reference "ENQ-000001", customerId (null for a guest), name, email (guest only),
+ *     type "general"|"booking", bookingId (null for general), message, status "open"|"answered",
+ *     createdAt ISO, replies: [{ from "staff", message, sentAt ISO }] }
+ *   A staff reply pushes to replies and sets status "answered". Older saved states may not have
+ *   the key yet, so read it as PHCStore.get("enquiries") || [].
  *
  * API:
  *   PHCStore.get(key)            -> deep copy of state[key]
@@ -35,7 +42,8 @@ var PHCStore = (function () {
       bookings: [],
       offers: [],
       draftBooking: null,
-      loginAttempts: {}
+      loginAttempts: {},
+      enquiries: []
     };
   }
 

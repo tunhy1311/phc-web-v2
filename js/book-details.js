@@ -373,6 +373,21 @@ var PHCBookDetails = (function () {
     var total = PHCRules.applyOnlineDiscount(base);
     return { base: base, discount: Math.round((base - total) * 100) / 100, total: total };
   }
+  function availabilityFor(
+    carSize,
+    pickupAt,
+    passengers,
+    requestedHours
+  ) {
+    return PHCRules.vehicleAvailability(
+      PHCStore.get("cars") || [],
+      PHCStore.get("bookings") || [],
+      carSize,
+      pickupAt,
+      passengers,
+      requestedHours
+    );
+  }
 
   function renderSummary() {
     var d = draft();
@@ -380,6 +395,12 @@ var PHCBookDetails = (function () {
     var v = d.details || {};
     var customer = currentCustomer();
     var price = priceFor(service, d);
+    var availability = availabilityFor(
+      v.carSize,
+      d.pickupAt,
+      v.passengers,
+      service.byTime ? d.hours : 2
+    );
 
     var rows = [
       ["Service", service.name],
@@ -392,6 +413,45 @@ var PHCBookDetails = (function () {
     if (service.byTime) rows.push(["Hours of hire", String(d.hours)]);
     if (service.needsFlight) rows.push(["Flight number", d.flight || "Not given"]);
     if (customer) rows.push(["Booked by", customer.name]);
+    rows.push([
+      "Vehicle availability",
+      availability.available
+        ? "Available (" + availability.count + " vehicle(s))"
+        : "Not available"
+    ]);
+
+    var availabilityMessage;
+
+    if (availability.available) {
+      availabilityMessage =
+        '<p class="hint-box">A ' + esc(String(v.carSize)) +
+        '-seater is available for the selected time.</p>';
+    } else {
+      var suggestion = "";
+
+      if (availability.alternativeSize) {
+        suggestion +=
+          " Try a " +
+          availability.alternativeSize +
+          "-seater.";
+      }
+
+      if (availability.nextTime) {
+        suggestion +=
+          " Or try " +
+          esc(formatPickup(availability.nextTime)) +
+          ".";
+      } else {
+        suggestion +=
+          " Please choose another date or time.";
+      }
+
+      availabilityMessage =
+        '<p class="error" role="alert">' +
+        "Not available for the selected size and time." +
+        suggestion +
+        "</p>";
+    }
 
     summaryStep.innerHTML =
       '<div class="card">' +
@@ -402,6 +462,7 @@ var PHCBookDetails = (function () {
             return "<div><dt>" + esc(r[0]) + "</dt><dd>" + esc(r[1]) + "</dd></div>";
           }).join("") +
         "</dl>" +
+        availabilityMessage +
         '<dl class="summary-list price-list">' +
           "<div><dt>Fare" + (service.byTime ? " (" + esc(d.hours) + " h × " + money(service.fromPrice) + ")" : "") +
             "</dt><dd>" + money(price.base) + "</dd></div>" +
@@ -419,7 +480,9 @@ var PHCBookDetails = (function () {
     summaryStep.querySelector('[data-act="edit"]').addEventListener("click", function () {
       showStep("details");
     });
-    summaryStep.querySelector("#bk-confirm").addEventListener("click", confirmBooking);
+    var confirmButton = summaryStep.querySelector("#bk-confirm");
+    confirmButton.disabled = !availability.available;
+    confirmButton.addEventListener("click", confirmBooking);
   }
 
   function confirmBooking() {
@@ -445,6 +508,19 @@ var PHCBookDetails = (function () {
     if (!service || !check.valid) {
       errorBox.textContent = check.errors.date || "Some details need changing. Please edit your details.";
       button.disabled = false;
+      return;
+    }
+    var currentAvailability = availabilityFor(
+      v.carSize,
+      check.pickupAt,
+      v.passengers,
+      service.byTime ? d.hours : 2
+    );
+
+    if (!currentAvailability.available) {
+      errorBox.textContent =
+        "Not available for the selected size and time. Please edit your booking.";
+      button.disabled = true;
       return;
     }
 
