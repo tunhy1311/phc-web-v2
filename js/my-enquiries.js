@@ -41,7 +41,7 @@
           '<span class="badge ' + (status === "Answered" ? "badge-available" : "badge-accent") + '">' + status + "</span>" +
         "</div>" +
         '<dl class="summary-list">' +
-          "<div><dt>Type</dt><dd>" + esc(PHCEnquiry.TYPES[e.type] || e.type) + "</dd></div>" +
+          "<div><dt>Type</dt><dd>" + esc(PHCEnquiry.typeLabel(e)) + "</dd></div>" +
           (e.type === "booking" ? "<div><dt>Booking</dt><dd>" + esc(PHCEnquiry.bookingLabel(bookingById(e.bookingId))) + "</dd></div>" : "") +
           "<div><dt>Sent</dt><dd>" + esc(formatDate(e.createdAt)) + "</dd></div>" +
         "</dl>" +
