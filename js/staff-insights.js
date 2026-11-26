@@ -34,16 +34,13 @@ var PHCInsights = (function() {
     }
 
     function carLabel(booking, cars) {
-        var carId = booking.carId || booking.vehicleId;
+        if (booking.carModel) return booking.carModel;
+
         var car = cars.filter(function(item) {
-            return item.id === carId;
+            return item.id === booking.carId;
         })[0];
 
-        if (car) return car.make;
-        if (booking.carModel) return booking.carModel;
-        if (booking.carMake) return booking.carMake;
-
-        return null;
+        return car ? car.make : null;
     }
 
     function calculateInsights(bookings, cars, customers) {
@@ -79,7 +76,9 @@ var PHCInsights = (function() {
             }
 
             customerStats[customerId].bookings += 1;
-            customerStats[customerId].spend += Number(booking.total || 0);
+            customerStats[customerId].spend += Number(
+                booking.payment && booking.payment.amount || 0
+            );
         });
 
         var carsList = Object.keys(carStats).map(function(key) {
@@ -250,7 +249,9 @@ var PHCInsights = (function() {
         render();
     }
 
-    init();
+    if (document.getElementById("insights-filter")) {
+        init();
+    }
 
     return {
         calculateInsights: calculateInsights,
