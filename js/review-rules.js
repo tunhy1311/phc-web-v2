@@ -5,7 +5,9 @@
  *
  *   PHCReview.ERROR                          -> "Rate the journey, the minicab and the driver"
  *   PHCReview.RATED                          -> ["journey", "minicab", "driver"]
- *   PHCReview.canMarkCompleted(booking)      -> true for a paid, confirmed booking (staff action)
+ *   PHCReview.isPaidConfirmed(booking)       -> true for a paid, confirmed booking
+ *   PHCReview.journeyTaken(booking, now)     -> true when the pick-up time is not after 'now'
+ *   PHCReview.canMarkCompleted(booking, now) -> true for a paid, confirmed booking whose pick-up time has passed
  *   PHCReview.markCompleted(booking, now)    -> {ok, booking?, error?}  status "completed", completedAt ISO
  *   PHCReview.isCompleted(booking)           -> true when status is "completed"
  *   PHCReview.canReview(booking)             -> true when completed and not reviewed yet
@@ -42,15 +44,33 @@ var PHCReview = (function () {
     return Boolean(booking) && Boolean(booking.review) && typeof booking.review === "object";
   }
 
-  // A booking can be marked Completed only while it is confirmed (paid, not cancelled, not unpaid).
-  function canMarkCompleted(booking) {
+  var NOT_TAKEN = "The journey has not taken place yet. It can be marked as completed after the pick-up time.";
+
+  // Paid and confirmed (not cancelled, not unpaid, not completed yet).
+  function isPaidConfirmed(booking) {
     if (!booking) return false;
     return booking.status === "confirmed" && Boolean(booking.payment);
   }
 
+  // The journey has taken place when the pick-up time is not later than 'now'.
+  function journeyTaken(booking, now) {
+    if (!booking) return false;
+    var pickup = new Date(booking.pickupAt).getTime();
+    var current = now instanceof Date ? now.getTime() : new Date(now).getTime();
+    return isFinite(pickup) && isFinite(current) && pickup <= current;
+  }
+
+  // A booking can be marked Completed only when it is paid, confirmed and its pick-up time has passed.
+  function canMarkCompleted(booking, now) {
+    return isPaidConfirmed(booking) && journeyTaken(booking, now);
+  }
+
   function markCompleted(booking, now) {
-    if (!canMarkCompleted(booking)) {
+    if (!isPaidConfirmed(booking)) {
       return { ok: false, error: "Only a paid, confirmed booking can be marked as completed." };
+    }
+    if (!journeyTaken(booking, now)) {
+      return { ok: false, error: NOT_TAKEN };
     }
     var updated = clone(booking);
     updated.status = "completed";
@@ -101,6 +121,9 @@ var PHCReview = (function () {
   return {
     ERROR: ERROR,
     RATED: RATED,
+    NOT_TAKEN: NOT_TAKEN,
+    isPaidConfirmed: isPaidConfirmed,
+    journeyTaken: journeyTaken,
     canMarkCompleted: canMarkCompleted,
     markCompleted: markCompleted,
     isCompleted: isCompleted,

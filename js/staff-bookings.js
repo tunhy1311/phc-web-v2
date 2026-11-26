@@ -30,7 +30,9 @@
         ? "Reviewed: " + PHCReview.RATED.map(function (k) { return b.review[k]; }).join(" / ") + " stars"
         : "Waiting for the customer's review";
     } else {
-      action = '<button type="button" class="btn btn-primary btn-sm" data-complete="' + esc(b.id) + '" id="complete-' + esc(b.id) + '">Mark as completed</button>';
+      action = PHCReview.canMarkCompleted(b, new Date())
+        ? '<button type="button" class="btn btn-primary btn-sm" data-complete="' + esc(b.id) + '" id="complete-' + esc(b.id) + '">Mark as completed</button>'
+        : '<span id="wait-' + esc(b.id) + '">Available after the pick-up time</span>';
     }
     return (
       "<tr data-id=\"" + esc(b.id) + "\">" +
@@ -46,7 +48,7 @@
 
   function render() {
     var list = (PHCStore.get("bookings") || [])
-      .filter(function (b) { return PHCReview.canMarkCompleted(b) || PHCReview.isCompleted(b); })
+      .filter(function (b) { return PHCReview.isPaidConfirmed(b) || PHCReview.isCompleted(b); })
       .sort(function (a, b) { return new Date(a.pickupAt) - new Date(b.pickupAt); });
     root.innerHTML =
       '<div id="staff-bookings-status" class="success" role="status" aria-live="polite">' + esc(message) + "</div>" +

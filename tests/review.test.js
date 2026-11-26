@@ -43,6 +43,36 @@
     equal(PHCReview.markCompleted(booking({ status: "cancelled" }), NOW).ok, false);
   });
 
+  test("review: a booking whose pick-up is still in the future cannot be marked completed", function () {
+    var future = booking({ pickupAt: "2027-01-01T09:00:00" });
+    equal(PHCReview.journeyTaken(future, NOW), false);
+    equal(PHCReview.canMarkCompleted(future, NOW), false);
+    var r = PHCReview.markCompleted(future, NOW);
+    equal(r.ok, false);
+    equal(r.error, PHCReview.NOT_TAKEN);
+    equal(future.status, "confirmed");
+  });
+
+  test("review: a future booking cannot be reviewed because it can never reach completed", function () {
+    var future = booking({ pickupAt: "2027-01-01T09:00:00" });
+    equal(PHCReview.canReview(future), false);
+    equal(PHCReview.submitReview(future, GOOD, NOW).ok, false);
+  });
+
+  test("review: completion opens exactly at the pick-up time", function () {
+    var pickup = new Date(2026, 11, 5, 14, 30, 0);
+    var b = booking({ pickupAt: "2026-12-05T14:30:00" });
+    equal(PHCReview.canMarkCompleted(b, new Date(pickup.getTime() - 60000)), false);
+    equal(PHCReview.canMarkCompleted(b, pickup), true);
+    equal(PHCReview.canMarkCompleted(b, new Date(pickup.getTime() + 60000)), true);
+  });
+
+  test("review: a booking with no valid pick-up time cannot be marked completed", function () {
+    equal(PHCReview.journeyTaken(booking({ pickupAt: "" }), NOW), false);
+    equal(PHCReview.journeyTaken(booking({ pickupAt: "not a date" }), NOW), false);
+    equal(PHCReview.canMarkCompleted(booking({ pickupAt: undefined }), NOW), false);
+  });
+
   test("review: the review option is shown only for a completed booking without a review", function () {
     equal(PHCReview.canReview(completed()), true);
   });
