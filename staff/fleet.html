@@ -3,24 +3,90 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Fleet · PrivateHire Cars</title>
+  <title>Fleet &amp; Accounts · PrivateHire Cars</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="fleet-management.css">
 </head>
 <body data-root=".." data-area="staff">
-  <main id="main" class="container">
-    <h1>Fleet</h1>
-    <p class="lead">Manage cars, sizes, status and assigned drivers.</p>
+  <main id="main" class="container staff-management-page">
+    <p class="staff-kicker">Staff operations · US15</p>
+    <h1>Fleet &amp; customer management</h1>
+    <p class="lead staff-lead">Register minicabs, manage drivers and create customer accounts. Updates are saved to the shared prototype data used by Availability.</p>
+    <div class="staff-dashboard" aria-label="Records overview">
+      <div class="staff-stat"><span id="count-cars" class="staff-stat-number">—</span><span class="staff-stat-name">Registered minicabs</span></div>
+      <div class="staff-stat"><span id="count-drivers" class="staff-stat-number">—</span><span class="staff-stat-name">Registered drivers</span></div>
+      <div class="staff-stat"><span id="count-customers" class="staff-stat-number">—</span><span class="staff-stat-name">Customer accounts</span></div>
+    </div>
 
-    <!-- TODO (owner TBD: fleet management): build this page inside #page-root.
-         Header and footer come from js/ui.js - do not copy them into this file. -->
-    <div id="page-root" class="card placeholder">
-      <p>Skeleton page: to be built in Sprint 1.</p>
+    <section class="card staff-panel" aria-label="Create records">
+      <div class="staff-panel-header">
+        <div><h2>Add a record</h2><p>Choose a form below. Required fields are marked *.</p></div>
+        <a class="btn btn-ghost btn-sm" href="availability.html">View Availability</a>
+      </div>
+      <div class="staff-tabs" role="tablist" aria-label="Staff record forms">
+        <button type="button" class="staff-tab" role="tab" id="tab-car" aria-controls="panel-car" aria-selected="true">Add minicab</button>
+        <button type="button" class="staff-tab" role="tab" id="tab-driver" aria-controls="panel-driver" aria-selected="false">Add driver</button>
+        <button type="button" class="staff-tab" role="tab" id="tab-customer" aria-controls="panel-customer" aria-selected="false">Create customer</button>
+      </div>
+
+      <section class="staff-tab-panel" id="panel-car" role="tabpanel" aria-labelledby="tab-car">
+        <h3>Register a new minicab</h3>
+        <form id="car-form" novalidate>
+          <div class="staff-field-grid">
+            <div class="field"><label for="car-registration">Registration *</label><input id="car-registration" name="registration" placeholder="AB23 CDE" autocomplete="off" required><small class="staff-field-error" data-error-for="car-registration"></small></div>
+            <div class="field"><label for="car-make">Make *</label><input id="car-make" name="make" placeholder="Toyota Prius" required><small class="staff-field-error" data-error-for="car-make"></small></div>
+            <div class="field"><label for="car-colour">Colour *</label><input id="car-colour" name="colour" placeholder="Black" required><small class="staff-field-error" data-error-for="car-colour"></small></div>
+            <div class="field"><label for="car-size">Seats *</label><select id="car-size" name="size" required><option value="">Select vehicle size</option><option value="4">4-Seater</option><option value="7">7-Seater</option></select><small class="staff-field-error" data-error-for="car-size"></small></div>
+            <div class="field full"><label for="car-driver">Assign available driver (optional)</label><select id="car-driver" name="driverId"><option value="">Unassigned – assign later</option></select><small class="staff-field-error" data-error-for="car-driver"></small><p class="staff-hint">Only drivers not already assigned to a vehicle are listed.</p></div>
+          </div>
+          <div class="staff-form-actions"><button type="submit" class="btn btn-primary">Save minicab</button><button type="reset" class="btn btn-ghost">Clear form</button></div>
+          <div id="car-feedback" class="staff-feedback" role="status" aria-live="polite" hidden></div>
+        </form>
+      </section>
+
+      <section class="staff-tab-panel" id="panel-driver" role="tabpanel" aria-labelledby="tab-driver" hidden>
+        <h3>Add a new driver</h3>
+        <form id="driver-form" novalidate>
+          <div class="staff-field-grid">
+            <div class="field"><label for="driver-name">Driver full name *</label><input id="driver-name" name="name" placeholder="Alex Morgan" required><small class="staff-field-error" data-error-for="driver-name"></small></div>
+            <div class="field"><label for="driver-licence">Driving licence number *</label><input id="driver-licence" name="licenceNumber" maxlength="16" placeholder="16 letters and digits" autocomplete="off" required><small class="staff-field-error" data-error-for="driver-licence"></small><p class="staff-hint">Exactly 16 letters and digits, no spaces.</p></div>
+            <div class="field"><label for="driver-phone">UK mobile phone *</label><input id="driver-phone" name="phone" type="tel" placeholder="07123 456789" required><small class="staff-field-error" data-error-for="driver-phone"></small></div>
+            <div class="field"><label for="driver-car">Assign to an unassigned minicab (optional)</label><select id="driver-car" name="carId"><option value="">Keep unassigned</option></select><small class="staff-field-error" data-error-for="driver-car"></small></div>
+          </div>
+          <div class="staff-form-actions"><button type="submit" class="btn btn-primary">Save driver</button><button type="reset" class="btn btn-ghost">Clear form</button></div>
+          <div id="driver-feedback" class="staff-feedback" role="status" aria-live="polite" hidden></div>
+        </form>
+      </section>
+
+      <section class="staff-tab-panel" id="panel-customer" role="tabpanel" aria-labelledby="tab-customer" hidden>
+        <h3>Create a customer account</h3>
+        <form id="customer-form" novalidate>
+          <div class="staff-field-grid">
+            <div class="field"><label for="customer-name">Full name *</label><input id="customer-name" name="name" placeholder="Jamie Taylor" required><small class="staff-field-error" data-error-for="customer-name"></small></div>
+            <div class="field"><label for="customer-email">Email address *</label><input id="customer-email" name="email" type="email" placeholder="jamie@example.com" required><small class="staff-field-error" data-error-for="customer-email"></small></div>
+            <div class="field"><label for="customer-phone">UK mobile phone *</label><input id="customer-phone" name="phone" type="tel" placeholder="07123 456789" required><small class="staff-field-error" data-error-for="customer-phone"></small></div>
+            <div class="field"><label for="customer-address">Address *</label><input id="customer-address" name="address" placeholder="10 Baker Street, London" required><small class="staff-field-error" data-error-for="customer-address"></small></div>
+            <div class="field"><label for="customer-password">Temporary demo password *</label><input id="customer-password" name="password" type="password" autocomplete="new-password" required><small class="staff-field-error" data-error-for="customer-password"></small></div>
+            <div class="field"><label for="customer-confirm">Confirm password *</label><input id="customer-confirm" name="confirm" type="password" autocomplete="new-password" required><small class="staff-field-error" data-error-for="customer-confirm"></small></div>
+          </div>
+          <p class="staff-note">Prototype only: use fictional details. Passwords are saved in local browser demo data, not a secure production account system. No real confirmation email will be sent.</p>
+          <div class="staff-form-actions"><button type="submit" class="btn btn-primary">Create customer account</button><button type="reset" class="btn btn-ghost">Clear form</button></div>
+          <div id="customer-feedback" class="staff-feedback" role="status" aria-live="polite" hidden></div>
+        </form>
+        <div id="customer-confirmation-screen" class="staff-feedback ok" role="status" aria-live="polite" hidden></div>
+      </section>
+    </section>
+
+    <div class="staff-roster">
+      <section class="card" aria-labelledby="cars-heading"><h2 id="cars-heading">Registered minicabs</h2><div class="table-wrap"><table><thead><tr><th>Vehicle</th><th>Seats</th><th>Assigned driver</th></tr></thead><tbody id="staff-cars-rows"></tbody></table></div></section>
+      <section class="card" aria-labelledby="drivers-heading"><h2 id="drivers-heading">Drivers</h2><div class="table-wrap"><table><thead><tr><th>Driver</th><th>UK phone</th></tr></thead><tbody id="staff-drivers-rows"></tbody></table></div></section>
     </div>
   </main>
-
   <script src="../js/data.js"></script>
   <script src="../js/store.js"></script>
   <script src="../js/ui.js"></script>
+  <script src="../js/staff-fleet-rules.js"></script>
+  <script src="../js/staff-fleet.js"></script>
 </body>
 </html>
