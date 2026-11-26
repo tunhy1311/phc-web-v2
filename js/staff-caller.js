@@ -4,12 +4,17 @@
   var root = document.getElementById("page-root");
   if (!root) return;
 
-  function esc(value) {
-    return PHCUI.escapeHtml(String(value == null ? "" : value));
+  if (!PHCCallerVerification.isStaffSession(PHCStore.session())) {
+    root.innerHTML =
+      '<section class="card">' +
+        '<h2>Staff access required</h2>' +
+        '<p class="error" role="alert">This page is available to signed-in staff only.</p>' +
+      '</section>';
+    return;
   }
 
-  function normalPhone(value) {
-    return String(value || "").replace(/[\s\-()]/g, "");
+  function esc(value) {
+    return PHCUI.escapeHtml(String(value == null ? "" : value));
   }
 
   function customers() {
@@ -21,34 +26,12 @@
   }
 
   function findCustomer(type, query) {
-    var list = customers();
-    var wanted = String(query || "").trim();
-
-    if (type === "phone") {
-      var phone = normalPhone(wanted);
-      return list.filter(function (customer) {
-        return normalPhone(customer.phone) === phone;
-      })[0] || null;
-    }
-
-    if (type === "email") {
-      var email = wanted.toLowerCase();
-      return list.filter(function (customer) {
-        return String(customer.email || "").toLowerCase() === email;
-      })[0] || null;
-    }
-
-    var reference = wanted.toLowerCase();
-    var booking = bookings().filter(function (item) {
-      return [item.id, item.reference, item.bookingReference].some(function (value) {
-        return String(value || "").toLowerCase() === reference;
-      });
-    })[0];
-
-    if (!booking) return null;
-    return list.filter(function (customer) {
-      return customer.id === booking.customerId;
-    })[0] || null;
+    return PHCCallerVerification.findCustomer(
+      customers(),
+      bookings(),
+      type,
+      query
+    );
   }
 
   root.innerHTML =
@@ -141,11 +124,10 @@
 
     document.getElementById("verification-form").addEventListener("submit", function (event) {
       event.preventDefault();
-      var postcode = document.getElementById("verify-postcode").value.trim().toUpperCase().replace(/\s/g, "");
+      var postcode = document.getElementById("verify-postcode").value;
       var dob = document.getElementById("verify-dob").value;
-      var savedPostcode = String(customer.postcode || "").toUpperCase().replace(/\s/g, "");
 
-      if (postcode === savedPostcode && dob === customer.dob) {
+      if (PHCCallerVerification.verifyCustomer(customer, postcode, dob)) {
         openAccount(customer, "Caller verified successfully.");
         return;
       }
@@ -181,35 +163,22 @@
 
   function saveNewCustomer(event) {
     event.preventDefault();
-    var name = document.getElementById("new-name").value.trim();
-    var email = document.getElementById("new-email").value.trim().toLowerCase();
-    var phone = document.getElementById("new-phone").value.trim();
-    var postcode = document.getElementById("new-postcode").value.trim().toUpperCase();
-    var dob = document.getElementById("new-dob").value;
     var error = document.getElementById("new-customer-error");
     var list = customers();
+    var creation = PHCCallerVerification.createCustomer(list, {
+      name: document.getElementById("new-name").value,
+      email: document.getElementById("new-email").value,
+      phone: document.getElementById("new-phone").value,
+      postcode: document.getElementById("new-postcode").value,
+      dob: document.getElementById("new-dob").value
+    }, "c-" + Date.now());
 
-    if (!name) return void (error.textContent = "Enter the customer's name.");
-    if (!PHCValidate.email(email)) return void (error.textContent = "Enter a valid email address.");
-    if (!PHCValidate.phone(phone)) return void (error.textContent = "Enter a valid UK phone number.");
-    if (!PHCValidate.postcode(postcode)) return void (error.textContent = "Enter a valid UK postcode.");
-    if (!dob) return void (error.textContent = "Enter the customer's date of birth.");
-    if (list.some(function (customer) { return String(customer.email || "").toLowerCase() === email; })) {
-      return void (error.textContent = "An account with this email already exists.");
+    if (!creation.valid) {
+      error.textContent = creation.error;
+      return;
     }
 
-    var customer = {
-      id: "c-" + Date.now(),
-      name: name,
-      email: email,
-      phone: phone,
-      address: "",
-      postcode: postcode,
-      dob: dob,
-      password: "",
-      card: null,
-      bookings: []
-    };
+    var customer = creation.customer;
 
     list.push(customer);
     PHCStore.set("customers", list);

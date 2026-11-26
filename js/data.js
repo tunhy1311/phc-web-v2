@@ -97,6 +97,10 @@ var PHC_DATA = {
     }
   ],
 
+  staff: [
+    { id: "s1", name: "Alex Morgan", email: "staff@phc.example", password: "staff1234" }
+  ],
+
   drivers: [
     { id: "d1", name: "James Carter", phone: "07700 900101" },
     { id: "d2", name: "Amira Hassan", phone: "07700 900102" },
