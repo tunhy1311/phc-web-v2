@@ -82,6 +82,97 @@ var PHCRules = (function () {
     return roundMoney(total * (1 - ONLINE_DISCOUNT));
   }
 
+  /**
+   * Checks fleet availability for a requested vehicle size and time interval.
+   * Also returns a capacity-safe alternative size and the next genuinely
+   * available start time (searched hourly for the following 24 hours).
+   * This function is pure so the availability rules can be unit tested.
+   */
+  function vehicleAvailability(cars, bookings, carSize, pickupAt, passengers, requestedHours) {
+    var fleet = Array.isArray(cars) ? cars : [];
+    var existingBookings = Array.isArray(bookings) ? bookings : [];
+    var selectedStart = toTime(pickupAt);
+    var durationHours = Number(requestedHours);
+
+    // Fixed-price journeys currently use a two-hour estimated duration.
+    if (!isFinite(durationHours) || durationHours <= 0) durationHours = 2;
+
+    function bookingEndTime(booking, bookingStart) {
+      var explicitEnd = booking.endAt || booking.dropoffAt;
+      var endTime = toTime(explicitEnd);
+      if (isFinite(endTime) && endTime > bookingStart) return endTime;
+
+      var bookingHours = Number(booking.hours);
+      if (!isFinite(bookingHours) || bookingHours <= 0) bookingHours = 2;
+      return bookingStart + bookingHours * HOUR_MS;
+    }
+
+    function availableCount(size, startTime) {
+      if (!isFinite(startTime)) return 0;
+      var requestedEnd = startTime + durationHours * HOUR_MS;
+      var fleetCount = fleet.filter(function (car) {
+        return Number(car.size) === Number(size) && car.status === "available";
+      }).length;
+
+      var events = [];
+
+      existingBookings.forEach(function (booking) {
+        if (!booking || booking.status === "cancelled") return;
+        if (Number(booking.carSize) !== Number(size)) return;
+
+        var bookingStart = toTime(booking.pickupAt);
+        if (!isFinite(bookingStart)) return;
+        var bookingEnd = bookingEndTime(booking, bookingStart);
+        if (!(startTime < bookingEnd && requestedEnd > bookingStart)) return;
+
+        // Only the portion inside the requested interval affects capacity.
+        events.push({ time: Math.max(startTime, bookingStart), change: 1 });
+        events.push({ time: Math.min(requestedEnd, bookingEnd), change: -1 });
+      });
+
+      // Count the peak number of simultaneous bookings, rather than every
+      // booking that touches the requested interval. End events come first so
+      // back-to-back bookings do not count as concurrent.
+      events.sort(function (a, b) {
+        return a.time - b.time || a.change - b.change;
+      });
+
+      var concurrent = 0;
+      var peakConcurrent = 0;
+      events.forEach(function (event) {
+        concurrent += event.change;
+        peakConcurrent = Math.max(peakConcurrent, concurrent);
+      });
+
+      return Math.max(0, fleetCount - peakConcurrent);
+    }
+
+    var count = availableCount(carSize, selectedStart);
+    var alternativeSize = Number(carSize) === 4 ? 7 : 4;
+    var alternativeFits = Number(alternativeSize) >= Number(passengers);
+    var alternativeCount = alternativeFits
+      ? availableCount(alternativeSize, selectedStart)
+      : 0;
+    var nextTime = null;
+
+    if (isFinite(selectedStart)) {
+      for (var hour = 1; hour <= 24; hour++) {
+        var candidateStart = selectedStart + hour * HOUR_MS;
+        if (availableCount(carSize, candidateStart) > 0) {
+          nextTime = new Date(candidateStart).toISOString();
+          break;
+        }
+      }
+    }
+
+    return {
+      available: count > 0,
+      count: count,
+      alternativeSize: alternativeCount > 0 ? alternativeSize : null,
+      nextTime: nextTime
+    };
+  }
+
   // ---------- US05: booking details ----------
 
   var CAR_SIZES = [4, 7];           // passenger seats of the cars in the fleet
@@ -219,6 +310,7 @@ var PHCRules = (function () {
     canChangeBooking: canChangeBooking,
     baseFare: baseFare,
     applyOnlineDiscount: applyOnlineDiscount,
+    vehicleAvailability: vehicleAvailability,
     combineDateTime: combineDateTime,
     suggestCarSize: suggestCarSize,
     bookingTag: bookingTag,
