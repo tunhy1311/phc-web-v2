@@ -1,0 +1,35 @@
+/* US03 - Enquiry and My enquiries pages (PHC-18). Only classes used by js/enquiry.js and js/my-enquiries.js. */
+.enquiry-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.enquiry-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.enquiry-message {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.enquiry-reply {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-left: 3px solid var(--success);
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+}
+
+.enquiry-reply p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.enquiry-reply p + p {
+  margin-top: 6px;
+}
