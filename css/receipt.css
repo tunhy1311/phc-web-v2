@@ -1,0 +1,109 @@
+/* US09 - Receipt page and print view (PHC-24). Only classes used by js/receipt.js. */
+.receipt h2 {
+  margin: 20px 0 8px;
+  font-size: 1.1rem;
+}
+
+.receipt .summary-list {
+  max-width: none;
+}
+
+.receipt-table th {
+  color: var(--text);
+}
+
+.receipt + .actions {
+  margin-top: var(--space);
+}
+
+.receipt-head {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.receipt-ref {
+  margin: 0 0 4px;
+  font-size: 1.25rem;
+}
+
+.receipt-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.receipt-table td,
+.receipt-table th {
+  padding: 8px 0;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.receipt-table .num,
+.receipt-table tfoot td {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.receipt-table tfoot th,
+.receipt-table tfoot td {
+  font-size: 1.1rem;
+  border-bottom: 0;
+}
+
+@page {
+  size: A4;
+  margin: 16mm;
+}
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .site-header,
+  .site-footer,
+  .skip-link,
+  .no-print,
+  h1,
+  .lead {
+    display: none !important;
+  }
+
+  main.container {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .receipt {
+    background: #fff !important;
+    color: #000 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .receipt-table th,
+  .receipt dd {
+    color: #000 !important;
+  }
+
+  .receipt .muted,
+  .receipt dt {
+    color: #333 !important;
+  }
+
+  .receipt-head,
+  .receipt-table td,
+  .receipt-table th {
+    border-color: #999 !important;
+  }
+
+  .receipt-ref {
+    font-size: 1.5rem;
+  }
+}

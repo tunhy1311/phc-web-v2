@@ -1,7 +1,7 @@
 /*
  * US10 - My bookings: view, cancel or amend a booking (PHC-25). Owner: Huy.
  * Fills #page-root on customer/my-bookings.html.
- * Load after: data.js, store.js, ui.js, validators.js, rules.js, auth.js, booking-changes.js.
+ * Load after: data.js, store.js, ui.js, validators.js, rules.js, auth.js, booking-changes.js, receipt-rules.js.
  *
  * All rules live in PHCBookingChanges (pure functions, unit tested). This file only draws the page
  * and saves the result with PHCStore.update("bookings", ...).
@@ -90,6 +90,12 @@
 
   // ---------- list ----------
 
+  function receiptLink(b) {
+    if (!PHCReceipt.canView(b, { role: "customer", id: customer.id }).ok) return "";
+    return '<a class="btn btn-ghost btn-sm" id="receipt-' + esc(b.id) + '" href="' +
+      esc(PHCUI.url("customer/receipt.html") + "?booking=" + encodeURIComponent(b.id)) + '">View receipt</a>';
+  }
+
   function bookingCard(b) {
     var cancelled = b.status === "cancelled";
     return (
@@ -109,6 +115,7 @@
           : '<div class="actions">' +
               '<button type="button" class="btn btn-ghost btn-sm" data-act="amend" id="amend-' + esc(b.id) + '">Amend</button>' +
               '<button type="button" class="btn btn-ghost btn-sm" data-act="cancel" id="cancel-' + esc(b.id) + '">Cancel booking</button>' +
+              receiptLink(b) +
             "</div>") +
         '<div class="booking-panel" data-panel></div>' +
       "</article>"
