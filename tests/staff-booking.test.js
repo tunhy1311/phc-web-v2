@@ -143,4 +143,16 @@
     equal(b.hours, 2);
     equal(b.createdBy, "s1");
   });
+
+  test("sessionChanged: a write from another tab by the same staff keeps the page", function () {
+    equal(S.sessionChanged("staff:s1", "staff:s1"), false);
+    equal(S.sessionChanged("", ""), false);
+  });
+
+  test("sessionChanged: sign in, sign out or another account redraws the page", function () {
+    equal(S.sessionChanged("", "staff:s1"), true);
+    equal(S.sessionChanged("staff:s1", ""), true);
+    equal(S.sessionChanged("staff:s1", "staff:s2"), true);
+    equal(S.sessionChanged("staff:s1", "customer:c1"), true);
+  });
 })();

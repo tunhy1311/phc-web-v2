@@ -116,6 +116,13 @@ var PHCStaffBooking = (function () {
     };
   }
 
+  // ui.js fires "phc:session-change" for ANY write another tab makes to the shared state.
+  // `shownFor` and `now` are "role:id", or "" when nobody is signed in. Only a real change of
+  // user should redraw the page; otherwise the typed form or the saved reference must stay.
+  function sessionChanged(shownFor, now) {
+    return shownFor !== now;
+  }
+
   return {
     CHANNELS: CHANNELS,
     findCustomers: findCustomers,
@@ -124,7 +131,8 @@ var PHCStaffBooking = (function () {
     buildCustomer: buildCustomer,
     validateStaffBooking: validateStaffBooking,
     price: price,
-    buildBooking: buildBooking
+    buildBooking: buildBooking,
+    sessionChanged: sessionChanged
   };
 })();
 

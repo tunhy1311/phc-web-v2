@@ -11,6 +11,12 @@
     service: "#nb-service", channel: "#nb-channel", carSize: "#nb-carsize"
   };
   var CUSTOMER_FIELDS = ["name", "email", "phone", "address", "postcode"];
+  var shownFor = null; // the session the page was last drawn for, as sessionKey()
+
+  function sessionKey() {
+    var s = PHCStore.session();
+    return s ? s.role + ":" + s.id : "";
+  }
 
   function money(n) {
     return "£" + Number(n).toFixed(2);
@@ -65,6 +71,7 @@
   }
 
   function render() {
+    shownFor = sessionKey();
     if (!PHCStaffAuth.current()) {
       renderRefused();
       return;
@@ -476,7 +483,12 @@
     focusHeading(q("#nb-saved"));
   }
 
-  document.addEventListener("phc:session-change", render);
+  // Redraw only when the signed-in user really changed (sign out, another account). Any other
+  // write from another tab, such as an enquiry or a booking saved there, leaves the typed form
+  // and the "Booking saved" reference as they are (same fix as PR #18).
+  document.addEventListener("phc:session-change", function () {
+    if (PHCStaffBooking.sessionChanged(shownFor, sessionKey())) render();
+  });
   document.addEventListener("phc:reset", function () {
     selectedId = null;
     render();
