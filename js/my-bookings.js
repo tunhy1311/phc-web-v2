@@ -1,7 +1,8 @@
 /*
  * US10 - My bookings: view, cancel or amend a booking (PHC-25). Owner: Huy.
  * Fills #page-root on customer/my-bookings.html.
- * Load after: data.js, store.js, ui.js, validators.js, rules.js, auth.js, booking-changes.js, receipt-rules.js.
+ * Load after: data.js, store.js, ui.js, validators.js, rules.js, auth.js, booking-changes.js, receipt-rules.js,
+ * review-rules.js (US11 PHC-9: a Completed booking shows "Leave a review", or the ratings once reviewed).
  *
  * All rules live in PHCBookingChanges (pure functions, unit tested). This file only draws the page
  * and saves the result with PHCStore.update("bookings", ...).
@@ -72,8 +73,9 @@
   }
 
   function statusBadge(b) {
-    var label = PHCBookingChanges.statusLabel(b);
-    var cls = label === "Confirmed" ? "badge-available" : "badge-busy";
+    var completed = PHCReview.isCompleted(b);
+    var label = completed ? "Completed" : PHCBookingChanges.statusLabel(b);
+    var cls = label === "Confirmed" || completed ? "badge-available" : "badge-busy";
     return '<span class="badge ' + cls + '">' + label + "</span>";
   }
 
@@ -96,8 +98,30 @@
       esc(PHCUI.url("customer/receipt.html") + "?booking=" + encodeURIComponent(b.id)) + '">View receipt</a>';
   }
 
+  function reviewSummary(b) {
+    if (!PHCReview.hasReview(b)) return "";
+    var r = b.review;
+    return (
+      '<div class="review-summary" id="review-' + esc(b.id) + '">' +
+        "<p><strong>Your review</strong></p>" +
+        PHCReview.RATED.map(function (key) {
+          return "<p>" + esc(key.charAt(0).toUpperCase() + key.slice(1)) + ": " +
+            '<span class="star-text" aria-hidden="true">' + PHCReview.stars(r[key]) + "</span> " + esc(String(r[key])) + " out of 5</p>";
+        }).join("") +
+        (r.comment ? "<p>" + esc(r.comment) + "</p>" : "") +
+      "</div>"
+    );
+  }
+
+  function reviewButton(b) {
+    if (!PHCReview.canReview(b)) return "";
+    return '<a class="btn btn-primary btn-sm" id="review-btn-' + esc(b.id) + '" href="' +
+      esc(PHCUI.url("customer/review.html") + "?booking=" + encodeURIComponent(b.id)) + '">Leave a review</a>';
+  }
+
   function bookingCard(b) {
     var cancelled = b.status === "cancelled";
+    var completed = PHCReview.isCompleted(b);
     return (
       '<article class="card booking-card" data-id="' + esc(b.id) + '" aria-label="Booking to ' + esc(b.destination) + '">' +
         '<div class="booking-head">' +
@@ -112,6 +136,8 @@
         "</dl>" +
         (cancelled
           ? '<p class="muted">This booking was cancelled.</p>'
+          : completed
+          ? '<div class="actions">' + reviewButton(b) + receiptLink(b) + "</div>" + reviewSummary(b)
           : '<div class="actions">' +
               '<button type="button" class="btn btn-ghost btn-sm" data-act="amend" id="amend-' + esc(b.id) + '">Amend</button>' +
               '<button type="button" class="btn btn-ghost btn-sm" data-act="cancel" id="cancel-' + esc(b.id) + '">Cancel booking</button>' +
