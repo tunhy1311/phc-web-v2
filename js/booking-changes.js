@@ -90,7 +90,7 @@ var PHCBookingChanges = (function () {
     return { base: base, discount: Math.round((base - total) * 100) / 100, total: total };
   }
 
-  function amendBooking(booking, changes, now) {
+  function amendBooking(booking, changes, now, fleet) {
     var check = checkChange(booking, now);
     if (!check.allowed) return { ok: false, errors: { form: check.reason } };
 
@@ -127,6 +127,17 @@ var PHCBookingChanges = (function () {
     var updated = clone(booking);
     updated.pickupAt = result.pickupAt;
     updated.carSize = Number(c.carSize);
+    // The current booking is deliberately excluded: it is being replaced, not competing.
+    if (fleet) {
+      var car = PHCVehicleAssignment.findAvailableCar(
+        updated, fleet.cars || [], fleet.bookings || [], booking.id
+      );
+      if (!car) {
+        return { ok: false, errors: { form: "No suitable vehicle is available for this time. Please choose another date, time or car size." } };
+      }
+      updated.carId = car.id;
+      updated.carModel = car.make;
+    }
     var price = priceFor(updated, service);
     updated.baseFare = price.base;
     updated.discount = price.discount;

@@ -33,14 +33,10 @@ var PHCInsights = (function() {
         });
     }
 
-    function carLabel(booking, cars) {
-        if (booking.carModel) return booking.carModel;
-
-        var car = cars.filter(function(item) {
-            return item.id === booking.carId;
-        })[0];
-
-        return car ? car.make : null;
+    function carLabel(booking) {
+        // Historical rows without a recorded assignment are intentionally excluded.
+        // Looking up today's fleet would invent a model for an old booking.
+        return booking.carModel ? booking.carModel : null;
     }
 
     function calculateInsights(bookings, cars, customers) {
@@ -48,7 +44,7 @@ var PHCInsights = (function() {
         var customerStats = {};
 
         bookings.forEach(function(booking) {
-            var carName = carLabel(booking, cars);
+            var carName = carLabel(booking);
 
             if (carName) {
                 if (!carStats[carName]) {

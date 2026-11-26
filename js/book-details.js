@@ -433,12 +433,12 @@ var PHCBookDetails = (function() {
         summaryStep.querySelector("#bk-confirm").addEventListener("click", confirmBooking);
     }
 
-    function assignedCar(carSize) {
-        var cars = PHCStore.get("cars") || [];
-
-        return cars.filter(function(car) {
-            return Number(car.size) === Number(carSize);
-        })[0] || null;
+    function assignedCar(booking) {
+        return PHCVehicleAssignment.findAvailableCar(
+            booking,
+            PHCStore.get("cars") || [],
+            PHCStore.get("bookings") || []
+        );
     }
 
     function confirmBooking() {
@@ -475,7 +475,6 @@ var PHCBookDetails = (function() {
         }
 
         var price = priceFor(service, d);
-        var car = assignedCar(v.carSize);
         var booking = {
             id: newId(),
             customerId: customer.id,
@@ -488,8 +487,8 @@ var PHCBookDetails = (function() {
             pickupAt: check.pickupAt,
             passengers: Number(v.passengers),
             carSize: Number(v.carSize),
-            carId: car ? car.id : "",
-            carModel: car ? car.make : "Unknown model",
+            carId: "",
+            carModel: "",
             baseFare: price.base,
             discount: price.discount,
             total: price.total,
@@ -498,6 +497,14 @@ var PHCBookDetails = (function() {
             status: "unpaid",
             createdAt: new Date().toISOString()
         };
+        var car = assignedCar(booking);
+        if (!car) {
+            errorBox.textContent = "No suitable vehicle is available for this time. Please choose another date, time or car size.";
+            button.disabled = false;
+            return;
+        }
+        booking.carId = car.id;
+        booking.carModel = car.make;
 
         PHCStore.update("bookings", function(list) {
             list = Array.isArray(list) ? list : [];

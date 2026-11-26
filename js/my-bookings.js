@@ -71,6 +71,10 @@
     });
   }
 
+  function fleetState() {
+    return { cars: PHCStore.get("cars") || [], bookings: PHCStore.get("bookings") || [] };
+  }
+
   function statusBadge(b) {
     var label = PHCBookingChanges.statusLabel(b);
     var cls = label === "Confirmed" ? "badge-available" : "badge-busy";
@@ -239,7 +243,7 @@
   function reviewAmend(card, id, form) {
     var b = findBooking(id);
     var changes = readForm(form);
-    var result = PHCBookingChanges.amendBooking(b, changes, new Date());
+    var result = PHCBookingChanges.amendBooking(b, changes, new Date(), fleetState());
     var errBox = form.querySelector("[data-error]");
     if (!result.ok) {
       errBox.textContent = result.errors.form || result.errors.date || result.errors.time || result.errors.carSize || "Please check your changes.";
@@ -268,7 +272,7 @@
       startAmend(card);
     });
     review.querySelector('[data-act="confirm-amend"]').addEventListener("click", function () {
-      var again = PHCBookingChanges.amendBooking(findBooking(id), changes, new Date()); // checked again
+      var again = PHCBookingChanges.amendBooking(findBooking(id), changes, new Date(), fleetState()); // checked again
       if (!again.ok) {
         review.querySelector("[data-error]").textContent =
           again.errors.form || again.errors.date || again.errors.time || again.errors.carSize || "These changes are no longer valid.";
