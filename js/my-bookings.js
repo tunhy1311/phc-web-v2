@@ -116,6 +116,7 @@
               '<button type="button" class="btn btn-ghost btn-sm" data-act="amend" id="amend-' + esc(b.id) + '">Amend</button>' +
               '<button type="button" class="btn btn-ghost btn-sm" data-act="cancel" id="cancel-' + esc(b.id) + '">Cancel booking</button>' +
               receiptLink(b) +
+              '<a class="btn btn-ghost btn-sm" href="' + esc(PHCUI.url("customer/notifications.html") + "?booking=" + encodeURIComponent(b.id)) + '">Notifications</a>' +
             "</div>") +
         '<div class="booking-panel" data-panel></div>' +
       "</article>"
