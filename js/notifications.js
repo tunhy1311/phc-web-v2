@@ -48,19 +48,28 @@ var PHCNotifications = (function () {
     };
     return { ok: true, booking: updated, errors: {} };
   }
+
   function canAssignCar(booking, car, drivers) {
-    if (!confirmedBooking(booking) || !car || !car.driverId) return false;
-    if (Number(car.size) < Number(booking.carSize || booking.passengers || 1)) return false;
-    return (drivers || []).some(function (d) { return d.id === car.driverId; });
+      if (!confirmedBooking(booking) || !car || !car.driverId) return false;
+      if (car.status !== "available") return false;
+      if (Number(car.size) < Number(booking.carSize || booking.passengers || 1)) return false;
+      return (drivers || []).some(function (d) { return d.id === car.driverId; });
   }
+
   function createApproachPreview(booking, car, driver, customer, minutes, now) {
     if (!confirmedBooking(booking)) return { ok: false, error: "Select a confirmed booking." };
     if (!booking.notification || !channels(booking.notification.method).length) {
       return { ok: false, error: "The customer must choose notification preferences first." };
     }
-    if (!car || !driver || car.driverId !== driver.id || Number(car.size) < Number(booking.carSize)) {
-      return { ok: false, error: "Choose an eligible car with its assigned driver." };
-    }
+    if (!car || car.status !== "available" || !driver ||
+      car.driverId !== driver.id ||
+      Number(car.size) < Number(booking.carSize)) {
+      return {
+          ok: false,
+          error: "Choose an available car with its assigned driver."
+      };
+  }
+
     if (!Number.isInteger(Number(minutes)) || Number(minutes) < 10 || Number(minutes) > 15) {
       return { ok: false, error: "Estimated arrival must be 10–15 minutes." };
     }

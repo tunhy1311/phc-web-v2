@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Staff sign in · PrivateHire Cars</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body data-root=".." data-area="staff">
+  <main id="main" class="container">
+    <h1>Staff sign in</h1>
+    <p class="lead">Call centre staff sign in here to book on behalf of customers.</p>
+
+    <div id="page-root">
+      <section class="card" id="view-login" aria-labelledby="h-staff-login">
+        <h2 id="h-staff-login">Sign in as call centre staff</h2>
+        <form class="form" id="staff-login-form" novalidate>
+          <p class="error" id="err-staff-login" role="alert"></p>
+          <div class="field">
+            <label for="s-email">Work email</label>
+            <input id="s-email" type="email" autocomplete="username">
+          </div>
+          <div class="field">
+            <label for="s-password">Password</label>
+            <input id="s-password" type="password" autocomplete="current-password">
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" type="submit">Sign in</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card" id="view-signed-in" aria-labelledby="h-staff-in" hidden>
+        <h2 id="h-staff-in">You are signed in</h2>
+        <p id="staff-welcome" class="muted"></p>
+        <div class="actions">
+          <a class="btn btn-primary" href="new-booking.html">New booking</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/store.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/staff-auth.js"></script>
+  <script src="../js/staff-login.js"></script>
+</body>
+</html>

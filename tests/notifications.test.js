@@ -3,7 +3,7 @@
   "use strict";
   var N = PHCNotifications;
   var sample = { id: "b-1", customerId: "c1", status: "confirmed", carSize: 4, notification: { method: "both", phone: "07123456789" } };
-  var car = { id: "car1", driverId: "d1", registration: "LB19 XKT", colour: "Black", make: "Toyota Prius", size: 4 };
+  var car = { id: "car1", driverId: "d1", registration: "LB19 XKT", colour: "Black", make: "Toyota Prius", size: 4, status: "available" };
   var driver = { id: "d1", name: "James Carter" };
   var customer = { email: "sarah@example.com" };
   function deep(x) { return JSON.parse(JSON.stringify(x)); }
@@ -87,5 +87,90 @@
     var b = deep(sample); delete b.notification;
     N.savePreference(b, "both", "07123 456789");
     PHCTest.equal(b.notification, undefined);
+  });
+
+  PHCTest.test("US07: available car can be assigned", function () {
+    PHCTest.equal(N.canAssignCar(sample, car, [driver]), true);
+  });
+
+  PHCTest.test("US07: busy car cannot be assigned", function () {
+    var busyCar = deep(car);
+    busyCar.status = "busy";
+    PHCTest.equal(N.canAssignCar(sample, busyCar, [driver]), false);
+  });
+
+  PHCTest.test("US07: unavailable car cannot be assigned", function () {
+    var unavailableCar = deep(car);
+    unavailableCar.status = "unavailable";
+    PHCTest.equal(N.canAssignCar(sample, unavailableCar, [driver]), false);
+  });
+
+  PHCTest.test("US07: car without status cannot be assigned", function () {
+    var noStatusCar = deep(car);
+    delete noStatusCar.status;
+    PHCTest.equal(N.canAssignCar(sample, noStatusCar, [driver]), false);
+  });
+
+  PHCTest.test("US07: busy car cannot trigger approaching alert", function () {
+    var busyCar = deep(car);
+    busyCar.status = "busy";
+    PHCTest.equal(
+      N.createApproachPreview(sample, busyCar, driver, customer, 12).ok,
+      false
+    );
+  });
+
+  PHCTest.test("US07: unavailable car cannot trigger approaching alert", function () {
+    var unavailableCar = deep(car);
+    unavailableCar.status = "unavailable";
+    PHCTest.equal(
+      N.createApproachPreview(sample, unavailableCar, driver, customer, 12).ok,
+      false
+    );
+  });
+
+  // PHC-22: Staff access regression tests
+
+  PHCTest.test("US07: guest cannot access staff alerts", function () {
+    var previousSession = PHCStore.session();
+
+    try {
+      PHCStore.setSession(null);
+      PHCTest.equal(PHCStaffAuth.current(), null);
+    } finally {
+      PHCStore.setSession(previousSession);
+    }
+  });
+
+  PHCTest.test("US07: customer cannot access staff alerts", function () {
+    var previousSession = PHCStore.session();
+
+    try {
+      PHCStore.setSession({
+        role: "customer",
+        id: "c1"
+      });
+
+      PHCTest.equal(PHCStaffAuth.current(), null);
+    } finally {
+      PHCStore.setSession(previousSession);
+    }
+  });
+
+  PHCTest.test("US07: valid staff session can access staff alerts", function () {
+    var previousSession = PHCStore.session();
+
+    try {
+      var staff = PHC_DATA.staff[0];
+
+      PHCStore.setSession({
+        role: "staff",
+        id: staff.id
+      });
+
+      PHCTest.equal(PHCStaffAuth.current() !== null, true);
+    } finally {
+      PHCStore.setSession(previousSession);
+    }
   });
 })();
