@@ -102,4 +102,8 @@
         equal(result.cars.length, 0);
         equal(result.customers.length, 0);
     });
+    test("insights: detects an invalid date range", function() {
+        equal("2026-12-01" > "2026-11-30", true);
+        equal("2026-11-01" > "2026-11-30", false);
+    });
 })();
