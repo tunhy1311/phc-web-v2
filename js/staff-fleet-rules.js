@@ -5,11 +5,14 @@ var PHCStaffRules = (function () {
   function text(value) { return typeof value === "string" ? value.trim() : ""; }
   function registrationKey(value) { return text(value).replace(/\s+/g, "").toUpperCase(); }
   function normaliseRegistration(value) { return text(value).replace(/\s+/g, " ").toUpperCase(); }
-  function normalisePhone(value) { return text(value).replace(/[\s()-]/g, ""); }
-  function validPhone(value) { return /^0\d{10}$/.test(normalisePhone(value)); }
+  function normalisePhone(value) {
+    var phone = text(value).replace(/[\s()-]/g, "");
+    return /^\+44[1-9]\d{9}$/.test(phone) ? "0" + phone.slice(3) : phone;
+  }
+  function validPhone(value) { return PHCValidate.phone(value); }
   function normaliseLicence(value) { return text(value).toUpperCase(); }
   function validLicence(value) { return /^[A-Z0-9]{16}$/.test(normaliseLicence(value)); }
-  function validEmail(value) { var email = text(value); return email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email); }
+  function validEmail(value) { return PHCValidate.email(value); }
   function arr(value) { return Array.isArray(value) ? value : []; }
 
   function validateCar(input, cars, drivers) {
@@ -41,7 +44,8 @@ var PHCStaffRules = (function () {
     if (!text(id)) return { ok: false, errors: { form: "Invalid vehicle ID." } };
     return { ok: true, value: {
       id: String(id), registration: checked.value.registration, make: checked.value.make,
-      colour: checked.value.colour, size: checked.value.size, status: "available", driverId: checked.value.driverId
+      colour: checked.value.colour, size: checked.value.size, status: checked.value.driverId ? "available" : "busy", driverId: checked.value.driverId,
+      awaitingDriver: !checked.value.driverId
     } };
   }
 
@@ -76,6 +80,22 @@ var PHCStaffRules = (function () {
     }, assignedCarId: checked.value.carId };
   }
 
+  function assignDriver(car, driverId) {
+    if (!car || car.driverId || !driverId) return car;
+    var updated = Object.assign({}, car, { driverId: driverId });
+    if (updated.awaitingDriver) { updated.status = "available"; delete updated.awaitingDriver; }
+    return updated;
+  }
+
+  function validDob(value) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    var date = new Date(value + "T00:00:00Z");
+    if (!isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== value) return false;
+    var now = new Date();
+    var today = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0") + "-" + String(now.getDate()).padStart(2,"0");
+    return value <= today;
+  }
+
   function validateCustomer(input, customers) {
     input = input || {};
     var errors = {};
@@ -83,15 +103,19 @@ var PHCStaffRules = (function () {
     var email = text(input.email).toLowerCase();
     var phone = normalisePhone(input.phone);
     var address = text(input.address);
+    var postcode = text(input.postcode).toUpperCase();
+    var dob = text(input.dob);
     var password = typeof input.password === "string" ? input.password : "";
     if (!name) errors.name = "Enter the customer's full name.";
     if (!validEmail(email)) errors.email = "Enter a valid email address.";
     else if (arr(customers).some(function (customer) { return text(customer.email).toLowerCase() === email; })) errors.email = "An account with this email already exists.";
     if (!validPhone(phone)) errors.phone = "Enter an 11-digit UK phone number";
+    if (!PHCValidate.postcode(postcode)) errors.postcode = "Enter a valid UK postcode.";
+    if (!validDob(dob)) errors.dob = "Enter a valid date of birth (not in the future).";
     if (!address) errors.address = "Enter the customer's address.";
     if (password.length < 8) errors.password = "Password must be at least 8 characters.";
     return { ok: !Object.keys(errors).length, errors: errors, value: {
-      name: name, email: email, phone: phone, address: address, password: password
+      name: name, email: email, phone: phone, address: address, postcode: postcode, dob: dob, password: password
     } };
   }
 
@@ -102,6 +126,7 @@ var PHCStaffRules = (function () {
     return { ok: true, value: {
       id: String(id), name: checked.value.name, email: checked.value.email,
       phone: checked.value.phone, address: checked.value.address,
+      postcode: checked.value.postcode, dob: checked.value.dob,
       password: checked.value.password, bookings: []
     } };
   }
@@ -111,7 +136,7 @@ var PHCStaffRules = (function () {
     normalisePhone: normalisePhone, validPhone: validPhone,
     normaliseLicence: normaliseLicence, validLicence: validLicence,
     validateCar: validateCar, createCar: createCar,
-    validateDriver: validateDriver, createDriver: createDriver,
+    validateDriver: validateDriver, createDriver: createDriver, assignDriver: assignDriver,
     validateCustomer: validateCustomer, createCustomer: createCustomer
   };
 })();

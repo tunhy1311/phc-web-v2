@@ -11,12 +11,12 @@
   var customers = [{ id: "c1", name: "Sarah Jones", email: "sarah@example.com" }];
   var car = { registration: "AB26 CDE", make: "Toyota Corolla", colour: "White", size: "4", driverId: "" };
   var driver = { name: "Alex Morgan", licenceNumber: "MORGAN70123AB9CD", phone: "07123 456789", carId: "" };
-  var customer = { name: "Jamie Taylor", email: "jamie@example.com", phone: "07123 456789", address: "10 Baker Street", password: "demo12345" };
+  var customer = { name: "Jamie Taylor", email: "jamie@example.com", phone: "07123 456789", address: "10 Baker Street", postcode: "SW1A 1AA", dob: "1995-06-15", password: "demo12345" };
   function edit(value, keys) { return Object.assign({}, value, keys); }
 
   T.test("US15 AC1: valid four-seater minicab can be created", function () {
     var result = R.createCar("car99", car, cars, drivers);
-    T.equal(result.ok, true); T.equal(result.value.size, 4); T.equal(result.value.status, "available");
+    T.equal(result.ok, true); T.equal(result.value.size, 4); T.equal(result.value.status, "busy");
   });
   T.test("US15 AC1: valid seven-seater minicab can be created", function () {
     var result = R.createCar("car99", edit(car, { size: "7" }), cars, drivers);
@@ -45,7 +45,8 @@
   });
   T.test("US15: new car can be assigned an available driver", function () {
     var list = drivers.concat([{ id: "d2", name: "Alex Morgan" }]);
-    T.equal(R.createCar("car99", edit(car, { driverId: "d2" }), cars, list).value.driverId, "d2");
+    var result = R.createCar("car99", edit(car, { driverId: "d2" }), cars, list);
+    T.equal(result.value.driverId, "d2"); T.equal(result.value.status, "available");
   });
   T.test("US15: cannot assign same driver to two cars", function () {
     T.equal(!!R.validateCar(edit(car, { driverId: "d1" }), cars, drivers).errors.driverId, true);
@@ -106,5 +107,31 @@
     var snapshot = JSON.stringify([cars, drivers, customers, car, driver, customer]);
     R.createCar("car99", car, cars, drivers); R.createDriver("d99", driver, drivers, cars); R.createCustomer("c99", customer, customers);
     T.equal(JSON.stringify([cars, drivers, customers, car, driver, customer]), snapshot);
+  });
+  T.test("US15 regression: unassigned car becomes available when driver assigned", function () {
+    var vehicle = R.createCar("car99", car, cars, drivers).value;
+    T.equal(vehicle.awaitingDriver, true);
+    var assigned = R.assignDriver(vehicle, "d99");
+    T.equal(assigned.driverId, "d99"); T.equal(assigned.status, "available");
+    T.equal(vehicle.status, "busy");
+  });
+  T.test("US15 regression: assigning a driver does not reset unrelated busy status", function () {
+    T.equal(R.assignDriver({status:"busy",driverId:null}, "d99").status,"busy");
+  });
+  T.test("US15 regression: international phone accepted and normalised", function () {
+    T.equal(R.validPhone("+44 7123 456789"), true);
+    T.equal(R.createCustomer("c99", edit(customer,{phone:"+44 7123 456789"}),customers).value.phone,"07123456789");
+  });
+  T.test("US15 regression: customer security details saved and caller can verify", function () {
+    var saved = R.createCustomer("c99", customer, customers).value;
+    T.equal(saved.postcode, "SW1A 1AA"); T.equal(saved.dob,"1995-06-15");
+    T.equal(PHCCallerVerification.verifyCustomer(saved,"SW1A 1AA","1995-06-15"),true);
+  });
+  T.test("US15 regression: missing or invalid postcode rejected", function () {
+    T.equal(!!R.validateCustomer(edit(customer,{postcode:""}),customers).errors.postcode,true);
+    T.equal(!!R.validateCustomer(edit(customer,{postcode:"123"}),customers).errors.postcode,true);
+  });
+  T.test("US15 regression: missing, impossible or future DOB rejected", function () {
+    ["","1995-02-30","2999-01-01"].forEach(function(dob){T.equal(!!R.validateCustomer(edit(customer,{dob:dob}),customers).errors.dob,true);});
   });
 })();

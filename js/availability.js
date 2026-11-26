@@ -73,7 +73,7 @@
     tr.appendChild(make("td", driverName));
     var statusTd = document.createElement("td");
     var statusClass = car.status === "available" ? "available" : "busy";
-    statusTd.appendChild(make("span", statusClass === "available" ? "Available" : "Busy", "vehicle-status " + statusClass));
+    statusTd.appendChild(make("span", statusClass === "available" ? "Available" : (car.awaitingDriver ? "No driver" : "Busy"), "vehicle-status " + statusClass));
     tr.appendChild(statusTd);
     return tr;
   }

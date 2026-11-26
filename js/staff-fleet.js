@@ -15,7 +15,7 @@
   var forms = {
     car: { form: carForm, keys: { registration: "car-registration", make: "car-make", colour: "car-colour", size: "car-size", driverId: "car-driver" } },
     driver: { form: driverForm, keys: { name: "driver-name", licenceNumber: "driver-licence", phone: "driver-phone", carId: "driver-car" } },
-    customer: { form: customerForm, keys: { name: "customer-name", email: "customer-email", phone: "customer-phone", address: "customer-address", password: "customer-password", confirm: "customer-confirm" } }
+    customer: { form: customerForm, keys: { name: "customer-name", email: "customer-email", phone: "customer-phone", address: "customer-address", postcode: "customer-postcode", dob: "customer-dob", password: "customer-password", confirm: "customer-confirm" } }
   };
 
   function clearErrors(kind) {
@@ -146,8 +146,7 @@
     PHCStore.update("drivers", function (list) { list.push(result.value); return list; });
     if (result.assignedCarId) {
       PHCStore.update("cars", function (list) {
-        list.forEach(function (car) { if (car.id === result.assignedCarId && !car.driverId) car.driverId = result.value.id; });
-        return list;
+        return list.map(function (car) { return car.id === result.assignedCarId ? PHCStaffRules.assignDriver(car, result.value.id) : car; });
       });
     }
     driverForm.reset();
