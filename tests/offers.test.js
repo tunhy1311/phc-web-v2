@@ -22,6 +22,14 @@
     equal(PHCOffers.isEligible(confirmed("c1", 5), "c1"), true);
   });
 
+  test("offers: completed journeys count towards loyalty eligibility", function () {
+    var bookings = confirmed("c1", 4).concat([
+      { id: "completed-1", customerId: "c1", status: "completed" }
+    ]);
+    equal(PHCOffers.confirmedCount(bookings, "c1"), 5);
+    equal(PHCOffers.isEligible(bookings, "c1"), true);
+  });
+
   test("offers: cancelled and another customer's bookings do not count", function () {
     var bookings = confirmed("c1", 4).concat([
       { customerId: "c1", status: "cancelled" },

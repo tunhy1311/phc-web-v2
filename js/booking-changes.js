@@ -90,6 +90,30 @@ var PHCBookingChanges = (function () {
     return { base: base, discount: Math.round((base - total) * 100) / 100, total: total };
   }
 
+  function roundMoney(value) {
+    return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+  }
+
+  function preserveAppliedOffer(updated, original, checkoutTotal) {
+    var before = Number(original.totalBeforeOffer);
+    var reduction = Number(original.offerDiscount);
+    var hasPaidOffer = original.status === "confirmed" && original.offerCode &&
+      isFinite(before) && before > 0 && isFinite(reduction) && reduction >= 0;
+
+    if (!hasPaidOffer) {
+      delete updated.offerCode;
+      delete updated.offerDiscount;
+      delete updated.totalBeforeOffer;
+      return;
+    }
+
+    var percent = reduction / before;
+    updated.offerCode = original.offerCode;
+    updated.totalBeforeOffer = checkoutTotal;
+    updated.offerDiscount = roundMoney(checkoutTotal * percent);
+    updated.total = roundMoney(checkoutTotal - updated.offerDiscount);
+  }
+
   function amendBooking(booking, changes, now) {
     var check = checkChange(booking, now);
     if (!check.allowed) return { ok: false, errors: { form: check.reason } };
@@ -131,11 +155,10 @@ var PHCBookingChanges = (function () {
     updated.baseFare = price.base;
     updated.discount = price.discount;
     updated.total = price.total;
-    // An offer is priced against the checkout total. A changed booking must be
-    // revalidated at checkout instead of keeping a stale offer reduction.
-    delete updated.offerCode;
-    delete updated.offerDiscount;
-    delete updated.totalBeforeOffer;
+    // A paid booking has already consumed its loyalty code, so retain that
+    // discount at the same percentage and reprice it against the amended fare.
+    // An unpaid offer is cleared so checkout can validate it again.
+    preserveAppliedOffer(updated, booking, price.total);
     updated.amendedAt = nowIso(now);
     return { ok: true, errors: {}, booking: updated, price: price, previousTotal: booking.total };
   }

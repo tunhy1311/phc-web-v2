@@ -25,7 +25,8 @@ var PHCOffers = (function () {
 
   function confirmedCount(bookings, customerId) {
     return (bookings || []).filter(function (booking) {
-      return booking.customerId === customerId && booking.status === "confirmed";
+      return booking.customerId === customerId &&
+        (booking.status === "confirmed" || booking.status === "completed");
     }).length;
   }
 
