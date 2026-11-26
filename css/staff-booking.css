@@ -1,0 +1,80 @@
+.nb-layout {
+  display: grid;
+  gap: var(--space);
+  align-items: start;
+}
+
+@media (min-width: 960px) {
+  .nb-layout {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  }
+}
+
+.nb-search-row {
+  display: flex;
+  gap: 10px;
+}
+
+.nb-search-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+#nb-results:empty {
+  display: none;
+}
+
+#nb-results,
+#nb-new-customer {
+  margin-top: var(--space);
+}
+
+.nb-matches {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.nb-match {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.nb-match-text {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.nb-none {
+  margin: 0 0 10px;
+}
+
+#nb-new-customer h3 {
+  margin-bottom: 12px;
+}
+
+#nb-price .summary-list {
+  margin: 0;
+}
+
+#nb-booking,
+#nb-saved {
+  scroll-margin-top: 160px;
+}
+
+#nb-saved {
+  max-width: 640px;
+}
+
+#page-root h2[tabindex="-1"]:focus {
+  outline: none;
+}
