@@ -71,6 +71,32 @@ var PHC_DATA = {
     }
   ],
 
+  // Sample journey that has already taken place (paid, confirmed, pick-up in the past) so that staff can
+  // mark it Completed and the customer can leave a review during the demo (PHC-9 / US11).
+  bookings: [
+    {
+      id: "bkdemo1",
+      customerId: "c1",
+      serviceId: "airport",
+      serviceName: "Airport transfer",
+      flight: "BA117",
+      hours: null,
+      pickup: "1 High St, London E1 6AN",
+      destination: "Heathrow Airport, Terminal 5",
+      pickupAt: "2026-11-20T09:30:00",
+      passengers: 2,
+      carSize: 4,
+      baseFare: 45,
+      discount: 6.75,
+      total: 38.25,
+      channel: "online",
+      tag: "Priority",
+      status: "confirmed",
+      createdAt: "2026-11-18T10:00:00.000Z",
+      payment: { method: "card", brand: "Visa", last4: "4242", paidAt: "2026-11-18T10:05:00.000Z", reference: "PAY-DEMO01", amount: 38.25 }
+    }
+  ],
+
   drivers: [
     { id: "d1", name: "James Carter", phone: "07700 900101" },
     { id: "d2", name: "Amira Hassan", phone: "07700 900102" },

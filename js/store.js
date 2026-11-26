@@ -32,7 +32,7 @@ var PHCStore = (function () {
       session: null,
       cars: clone(PHC_DATA.cars),
       drivers: clone(PHC_DATA.drivers),
-      bookings: [],
+      bookings: clone(PHC_DATA.bookings || []),
       draftBooking: null,
       loginAttempts: {}
     };
