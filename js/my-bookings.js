@@ -1,7 +1,8 @@
 /*
  * US10 - My bookings: view, cancel or amend a booking (PHC-25). Owner: Huy.
  * Fills #page-root on customer/my-bookings.html.
- * Load after: data.js, store.js, ui.js, validators.js, rules.js, auth.js, booking-changes.js, receipt-rules.js.
+ * Load after: data.js, store.js, ui.js, validators.js, rules.js, auth.js, booking-changes.js, receipt-rules.js, offers.js,
+ * review-rules.js (US11 PHC-9: a Completed booking shows "Leave a review", or the ratings once reviewed).
  *
  * All rules live in PHCBookingChanges (pure functions, unit tested). This file only draws the page
  * and saves the result with PHCStore.update("bookings", ...).
@@ -71,9 +72,14 @@
     });
   }
 
+  function fleetState() {
+    return { cars: PHCStore.get("cars") || [], bookings: PHCStore.get("bookings") || [] };
+  }
+
   function statusBadge(b) {
-    var label = PHCBookingChanges.statusLabel(b);
-    var cls = label === "Confirmed" ? "badge-available" : "badge-busy";
+    var completed = PHCReview.isCompleted(b);
+    var label = completed ? "Completed" : PHCBookingChanges.statusLabel(b);
+    var cls = label === "Confirmed" || completed ? "badge-available" : "badge-busy";
     return '<span class="badge ' + cls + '">' + label + "</span>";
   }
 
@@ -96,8 +102,52 @@
       esc(PHCUI.url("customer/receipt.html") + "?booking=" + encodeURIComponent(b.id)) + '">View receipt</a>';
   }
 
+  function reviewSummary(b) {
+    if (!PHCReview.hasReview(b)) return "";
+    var r = b.review;
+    return (
+      '<div class="review-summary" id="review-' + esc(b.id) + '">' +
+        "<p><strong>Your review</strong></p>" +
+        PHCReview.RATED.map(function (key) {
+          return "<p>" + esc(key.charAt(0).toUpperCase() + key.slice(1)) + ": " +
+            '<span class="star-text" aria-hidden="true">' + PHCReview.stars(r[key]) + "</span> " + esc(String(r[key])) + " out of 5</p>";
+        }).join("") +
+        (r.comment ? "<p>" + esc(r.comment) + "</p>" : "") +
+      "</div>"
+    );
+  }
+
+  function reviewButton(b) {
+    if (!PHCReview.canReview(b)) return "";
+    return '<a class="btn btn-primary btn-sm" id="review-btn-' + esc(b.id) + '" href="' +
+      esc(PHCUI.url("customer/review.html") + "?booking=" + encodeURIComponent(b.id)) + '">Leave a review</a>';
+  }
+
+  function activeOffer() {
+    var issued = PHCOffers.issue(customer.id, PHCStore.get("bookings") || [],
+      PHCStore.get("offers") || [], new Date());
+    if (issued.issued) PHCStore.set("offers", issued.offers);
+    if (!issued.offer) return null;
+    return PHCOffers.validate(issued.offer.code, customer.id, issued.offers, new Date()).ok
+      ? issued.offer
+      : null;
+  }
+
+  function offerCard(offer) {
+    if (!offer) return "";
+    return '<article class="card" id="loyalty-offer">' +
+      '<p class="eyebrow">Loyal customer offer</p>' +
+      '<h2>10% off your next booking</h2>' +
+      '<p>Use this single-use code at checkout: <strong>' + esc(offer.code) + '</strong></p>' +
+      '<p class="muted">Expires ' + esc(new Date(offer.expiresAt).toLocaleDateString("en-GB", {
+        day: "numeric", month: "long", year: "numeric"
+      })) + '.</p>' +
+    '</article>';
+  }
+
   function bookingCard(b) {
     var cancelled = b.status === "cancelled";
+    var completed = PHCReview.isCompleted(b);
     return (
       '<article class="card booking-card" data-id="' + esc(b.id) + '" aria-label="Booking to ' + esc(b.destination) + '">' +
         '<div class="booking-head">' +
@@ -112,10 +162,13 @@
         "</dl>" +
         (cancelled
           ? '<p class="muted">This booking was cancelled.</p>'
+          : completed
+          ? '<div class="actions">' + reviewButton(b) + receiptLink(b) + "</div>" + reviewSummary(b)
           : '<div class="actions">' +
               '<button type="button" class="btn btn-ghost btn-sm" data-act="amend" id="amend-' + esc(b.id) + '">Amend</button>' +
               '<button type="button" class="btn btn-ghost btn-sm" data-act="cancel" id="cancel-' + esc(b.id) + '">Cancel booking</button>' +
               receiptLink(b) +
+              '<a class="btn btn-ghost btn-sm" href="' + esc(PHCUI.url("customer/notifications.html") + "?booking=" + encodeURIComponent(b.id)) + '">Notifications</a>' +
             "</div>") +
         '<div class="booking-panel" data-panel></div>' +
       "</article>"
@@ -125,6 +178,7 @@
   function renderList(message) {
     var list = myBookings();
     var html = '<div id="changes-status" class="success" role="status" aria-live="polite">' + esc(message || "") + "</div>";
+    html += offerCard(activeOffer());
     if (!list.length) {
       html += '<div class="card"><p>You have no bookings yet.</p>' +
         '<p><a class="btn btn-primary" href="' + esc(PHCUI.url("customer/book.html")) + '">Book a car</a></p></div>';
@@ -239,7 +293,7 @@
   function reviewAmend(card, id, form) {
     var b = findBooking(id);
     var changes = readForm(form);
-    var result = PHCBookingChanges.amendBooking(b, changes, new Date());
+    var result = PHCBookingChanges.amendBooking(b, changes, new Date(), fleetState());
     var errBox = form.querySelector("[data-error]");
     if (!result.ok) {
       errBox.textContent = result.errors.form || result.errors.date || result.errors.time || result.errors.carSize || "Please check your changes.";
@@ -268,7 +322,7 @@
       startAmend(card);
     });
     review.querySelector('[data-act="confirm-amend"]').addEventListener("click", function () {
-      var again = PHCBookingChanges.amendBooking(findBooking(id), changes, new Date()); // checked again
+      var again = PHCBookingChanges.amendBooking(findBooking(id), changes, new Date(), fleetState()); // checked again
       if (!again.ok) {
         review.querySelector("[data-error]").textContent =
           again.errors.form || again.errors.date || again.errors.time || again.errors.carSize || "These changes are no longer valid.";
