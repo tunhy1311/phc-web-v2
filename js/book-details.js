@@ -593,9 +593,10 @@ var PHCBookDetails = (function () {
           '<span class="badge badge-busy">Unpaid</span></p>' +
         "<p>" + esc(booking.serviceName) + " on " + esc(formatPickup(booking.pickupAt)) + ", from " +
           esc(booking.pickup) + " to " + esc(booking.destination) + ". Total " + money(booking.total) + ".</p>" +
-        "<p>Pay now to confirm it.</p>" +
+        "<p>Choose how you want to receive booking updates, then complete payment to confirm your booking.</p>" +
         '<div class="actions">' +
-          '<a class="btn btn-primary" href="' + esc(PHCUI.url("customer/payment.html") + "?booking=" + encodeURIComponent(booking.id)) + '">Pay now</a>' +
+          '<a class="btn btn-primary" href="' + esc(PHCUI.url("customer/notifications.html") + "?booking=" + encodeURIComponent(booking.id)) + '">Choose notifications</a>' +
+          '<a class="btn btn-ghost" href="' + esc(PHCUI.url("customer/payment.html") + "?booking=" + encodeURIComponent(booking.id)) + '">Pay now</a>' +
           '<a class="btn btn-ghost" href="' + esc(PHCUI.url("customer/my-bookings.html")) + '">My bookings</a>' +
         "</div>" +
       "</div>";
