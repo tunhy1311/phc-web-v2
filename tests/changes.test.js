@@ -153,6 +153,29 @@
     equal(r.previousTotal, 99);
   });
 
+  test("amendBooking: keeps a consumed offer on a paid booking and recalculates it", function () {
+    var r = PHCBookingChanges.amendBooking(booking(48, {
+      offerCode: "PHC10-C1-ABC", offerDiscount: 3.83, totalBeforeOffer: 38.25, total: 34.42
+    }), changesFor(72, 4), NOW);
+    equal(r.ok, true);
+    equal(r.booking.offerCode, "PHC10-C1-ABC");
+    equal(r.booking.offerDiscount, 3.83);
+    equal(r.booking.totalBeforeOffer, 38.25);
+    equal(r.booking.total, 34.42);
+  });
+
+  test("amendBooking: clears an unpaid offer so checkout can revalidate it", function () {
+    var r = PHCBookingChanges.amendBooking(booking(48, {
+      status: "unpaid", offerCode: "PHC10-C1-ABC", offerDiscount: 3.83,
+      totalBeforeOffer: 38.25, total: 34.42
+    }), changesFor(72, 4), NOW);
+    equal(r.ok, true);
+    equal(r.booking.offerCode, undefined);
+    equal(r.booking.offerDiscount, undefined);
+    equal(r.booking.totalBeforeOffer, undefined);
+    equal(r.booking.total, 38.25);
+  });
+
   test("amendBooking: the original booking object is not changed", function () {
     var original = booking(48);
     PHCBookingChanges.amendBooking(original, changesFor(72, 7), NOW);

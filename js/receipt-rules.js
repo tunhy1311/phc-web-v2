@@ -12,7 +12,7 @@
  *   PHCReceipt.reasonText(reason)         -> sentence for the customer
  *   PHCReceipt.referenceOf(booking)       -> booking reference shown at the top of the receipt
  *
- * Offer code lines are not included: they are added in Sprint 3 (see PHC-24).
+ * US18 offer-code discounts are listed below the online booking discount.
  */
 var PHCReceipt = (function () {
   "use strict";
@@ -64,6 +64,9 @@ var PHCReceipt = (function () {
     if (!amended) {
       lines.push({ label: booking.serviceName + " fare", amount: base });
       if (discount > 0) lines.push({ label: "Online booking discount", amount: -discount });
+      if (Number(booking.offerDiscount) > 0) {
+        lines.push({ label: "Offer code " + booking.offerCode, amount: -Number(booking.offerDiscount) });
+      }
     }
 
     return {
