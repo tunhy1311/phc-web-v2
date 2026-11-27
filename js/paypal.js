@@ -40,6 +40,18 @@
     root.querySelector("#pp-pay").addEventListener("click", function () {
       var current = findBooking();
       if (PHCPayment.canPay(current, PHCStore.session()).ok) {
+        if (current.offerCode) {
+          var offerCheck = PHCOffers.validate(current.offerCode, current.customerId,
+            PHCStore.get("offers") || [], new Date());
+          if (!offerCheck.ok) {
+            var withoutOffer = PHCOffers.removeFromBooking(current);
+            PHCStore.update("bookings", function (list) {
+              return (list || []).map(function (b) { return b.id === withoutOffer.id ? withoutOffer : b; });
+            });
+            window.location.replace(back + "&offer=" + encodeURIComponent(offerCheck.message));
+            return;
+          }
+        }
         var paid = PHCPayment.markPaid(current, {
           method: "paypal",
           paidAt: new Date().toISOString(),
@@ -48,6 +60,9 @@
         PHCStore.update("bookings", function (list) {
           return (list || []).map(function (b) { return b.id === paid.id ? paid : b; });
         });
+        if (paid.offerCode) {
+          PHCStore.set("offers", PHCOffers.consume(PHCStore.get("offers") || [], paid.offerCode, paid.id, new Date()));
+        }
       }
       window.location.replace(back + "&paypal=success");
     });

@@ -3,7 +3,7 @@
  * All app state lives in ONE key: "phc-state-v1" (a JSON object).
  *
  * State keys (contract, do not rename):
- *   customers, session, cars, drivers, bookings, draftBooking, loginAttempts, enquiries
+ *   customers, session, cars, drivers, bookings, offers, draftBooking, loginAttempts, enquiries
  *
  * enquiries (US03 PHC-18 writes, US16 PHC-14 reads and replies), one record per enquiry:
  *   { id "enq-000001", reference "ENQ-000001", customerId (null for a guest), name, email (guest only),
@@ -40,6 +40,7 @@ var PHCStore = (function () {
       cars: clone(PHC_DATA.cars),
       drivers: clone(PHC_DATA.drivers),
       bookings: [],
+      offers: [],
       draftBooking: null,
       loginAttempts: {},
       enquiries: []
