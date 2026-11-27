@@ -37,19 +37,9 @@
     return isNaN(d.getTime()) ? null : d;
   }
 
-  // Future slot checks only work when an existing booking has BOTH pickupAt and endAt/dropoffAt.
-  // There are no confirmed release times for busy cars in the initial sample dataset.
   function clashesWithKnownBooking(car, when) {
     if (!when) return false;
-    return getBookings().some(function (b) {
-      if (b.status === "cancelled") return false;
-      if (b.carId !== car.id && b.vehicleId !== car.id) return false;
-      var endValue = b.endAt || b.dropoffAt;
-      if (!b.pickupAt || !endValue) return false;
-      var start = new Date(b.pickupAt).getTime();
-      var end = new Date(endValue).getTime();
-      return isFinite(start) && isFinite(end) && when.getTime() >= start && when.getTime() < end;
-    });
+    return PHCVehicleAssignment.hasConflict(car, { pickupAt: when.toISOString() }, getBookings());
   }
 
   function results() {
@@ -121,7 +111,7 @@
       return;
     }
     isFiltered = true;
-    feedback.textContent = "Showing matching available cars. Future availability is illustrative until dispatch schedules are supplied.";
+    feedback.textContent = "Showing matching available cars.";
     quoteResults.replaceChildren();
     refresh();
   });
