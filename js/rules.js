@@ -5,7 +5,7 @@
  *
  * Booking fields used here (team: confirm in Sprint 1 planning):
  *   booking.pickupAt  ISO date-time string of the pick-up, e.g. "2026-12-01T09:30:00"
- *   booking.status    "confirmed" | "cancelled" | ... (a cancelled booking cannot be changed)
+ *   booking.status    "confirmed" | "cancelled" | ... (a cancelled or completed booking cannot be changed)
  */
 var PHCRules = (function () {
   "use strict";
@@ -43,7 +43,7 @@ var PHCRules = (function () {
    * Returns false for cancelled bookings and for invalid input.
    */
   function canChangeBooking(booking, now) {
-    if (!booking || booking.status === "cancelled") return false;
+    if (!booking || booking.status === "cancelled" || booking.status === "completed") return false;
     var hours = hoursUntilPickup(booking, now);
     if (!isFinite(hours)) return false;
     return hours >= HOURS_BEFORE_CHANGE;

@@ -35,6 +35,7 @@ var PHCUI = (function () {
     { href: "staff/caller.html", label: "Caller" },
     { href: "staff/availability.html", label: "Availability" },
     { href: "staff/new-booking.html", label: "New booking" },
+    { href: "staff/bookings.html", label: "Completed journeys" },
     { href: "staff/fleet.html", label: "Fleet" },
     { href: "staff/enquiries.html", label: "Enquiries" },
     { href: "staff/insights.html", label: "Insights" }
